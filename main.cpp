@@ -4,7 +4,6 @@
 #include <cstring>
 #include "lfsr.hpp"
 
-
 constexpr int p = 131;
 constexpr int m = 4;
 
@@ -73,9 +72,7 @@ int main() {
 	using namespace std;
 	
 	static_assert(is_prime<p>());
-	
 	cout << "LFSR with modulo p: " << p << ", length m: " << m << endl;
-	
 	cout << "Wait for max period T = p^m - 1 polynomial look up..." << endl;
 	long long T;
 	STATE K = find_max_period_polynomial(T);
