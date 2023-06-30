@@ -1,6 +1,9 @@
 # Linear Feedback Shift Registers
-Linear Feedback Shift Registers, LFSR, and their applications. Prime number p and register length m are used.
-It contains function find_max_period_polynomial() to find LFSR coefficients K that provide maximal period T = p^m - 1.
+Linear Feedback Shift Registers, LFSR, and its applications.
+
+Prime number $p$ and register length $m$ are used.
+
+It contains function find_max_period_polynomial() to find vector of coefficients $K$ that provide maximal period $T = p^m - 1$.
 ## Build
 g++ main.cpp -std=c++17 -O3 -o lfsr
 ## Run
