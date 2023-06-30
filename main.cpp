@@ -2,13 +2,16 @@
 #include <random>
 #include <cmath>
 #include <cstring>
+
 #include "lfsr.hpp"
+
 
 constexpr int p = 131;
 constexpr int m = 4;
 
 using LFSR = lfsr8::LFSR<p, m>;
 using STATE = lfsr8::u32x8;
+
 
 template<int x>
 constexpr auto is_prime() {
@@ -32,6 +35,26 @@ auto add_separators(std::string& value, char thousandSep = '\'') {
     return value;
 }
 
+template <typename T>
+class GeometricDistribution {
+private:
+    std::random_device rd;
+    std::mt19937 gen;
+    std::geometric_distribution<T> dist;
+public:
+    GeometricDistribution(double p): gen(rd()), dist(p) {}
+    T operator()() { return dist(gen); }
+};
+
+template<class Generator>
+auto get_random_state(Generator& g) {
+	STATE st {};
+	for (int i=0; i<m; ++i) {
+		st[i] = g() % p;
+	}
+	return st;
+}
+
 auto calculate_period(LFSR& g) {
 	long long T = 1;
 	// const auto old_state = g.get_state();
@@ -51,16 +74,11 @@ auto calculate_period(LFSR& g) {
 auto find_max_period_polynomial(long long& T) {
 	STATE K = {1};
 	LFSR g(K);
-	
-	std::random_device rd;
-    std::mt19937 gen(rd());
-    std::geometric_distribution<> d(0.3);
+	GeometricDistribution<int> r(0.3);
 	T = 0;
 	const long long T_ref = std::pow(p, m) - 1;
 	while (T != T_ref) {
-		for (int i=0; i<m; ++i) {
-			K[i] = d(gen) % p;
-		}
+		K = get_random_state(r);
 		g.set_K(K);
 		T = calculate_period(g);
 	}
@@ -68,11 +86,14 @@ auto find_max_period_polynomial(long long& T) {
 }
 
 
+
 int main() {
 	using namespace std;
 	
 	static_assert(is_prime<p>());
+	
 	cout << "LFSR with modulo p: " << p << ", length m: " << m << endl;
+	
 	cout << "Wait for max period T = p^m - 1 polynomial look up..." << endl;
 	long long T;
 	STATE K = find_max_period_polynomial(T);
