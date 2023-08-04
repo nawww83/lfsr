@@ -17,7 +17,7 @@ template<int x>
 constexpr auto is_prime() {
 	int d = 2;
 	bool ok = true;
-	while (d <= int(std::sqrt(x))) {
+	while (d < x) {
 		ok &= ((x % d) != 0);
 		d += 1;
 	}
