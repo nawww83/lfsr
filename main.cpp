@@ -3,7 +3,7 @@
 #include <cmath>
 #include <cstring>
 
-#include "lfsr.hpp"
+#include "lfsr_hash.hpp"
 
 
 constexpr int p = 131;
@@ -149,6 +149,10 @@ int main() {
 	test_next_back();
 	cout << "Completed." << endl;
 	//
+
+	uint8_t v[32];
+	auto hash = lfsr_hash::hash(v, 32);
+	cout << "LFSR 16 bit hash: " << std::hex << hash << std::dec << endl;
 
     return 0;
 }

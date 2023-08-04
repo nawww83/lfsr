@@ -4,6 +4,7 @@
 
 namespace lfsr8 {
 using u32 = uint32_t;
+using u16 = uint16_t;
 using u32x8 = std::array<u32, 8>;
 
 static auto is_zero(u32x8 state) {
@@ -21,9 +22,9 @@ class LFSR {
 	static_assert(p < 256);
 	static_assert(p > 1);
 public:
-    	constexpr LFSR(u32x8 K): m_K(K) {
-			m_calc_inv_K0();
-		};
+	constexpr LFSR(u32x8 K): m_K(K) {
+		m_calc_inv_K0();
+	};
 	void set_state(u32x8 state) {
 		m_state = state;
 		m_v = m_state[m-1];
