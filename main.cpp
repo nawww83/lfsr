@@ -79,10 +79,48 @@ auto find_max_period_polynomial(long long& T) {
 	const long long T_ref = std::pow(p, m) - 1;
 	while (T != T_ref) {
 		K = get_random_state(r);
+		if (K[0] == 0) {
+			continue;
+		}
 		g.set_K(K);
 		T = calculate_period(g);
 	}
 	return K;
+}
+
+void test_next_back() {
+	STATE K = {1};
+	LFSR g(K);
+	GeometricDistribution<int> r(0.3);
+	const int iters = 256;
+	auto sub_test = [&g, &K, &r](int saturation){
+		int iter = 0;
+		while (iter < iters) {
+			//
+			K = get_random_state(r);
+			if (K[0] == 0) {
+				continue;
+			}
+			g.set_K(K);
+
+			g.set_unit_state();
+			g.saturate(saturation);
+			const STATE ref = g.get_state();
+			for (int i=0; i<32 + (31*iter/iters); ++i) {
+				g.next();
+			}
+			for (int i=0; i<32 + (31*iter/iters); ++i) {
+				g.back();
+			}
+			bool test = g.is_state(ref);
+			assert(test);
+			iter++;
+		}
+	};
+	sub_test(4);
+	sub_test(5);
+	sub_test(8);
+	sub_test(10);
 }
 
 
@@ -104,6 +142,11 @@ int main() {
 	cout << K[m-1] << ")" << endl;
 	auto T_str = std::to_string(T);
 	cout << "Period T: " << add_separators(T_str) << endl;
+
+	//
+	// cout << "Wait for Next-Back test..." << endl;
+	// test_next_back();
+	//
 
     return 0;
 }
