@@ -70,6 +70,7 @@ private:
 	u32 m_inv_K0 {};
 	void m_calc_inv_K0() {
 		const u32 x = m_K[0];
+		assert(x != 0);
 		m_inv_K0 = 1;
 		while (true) {
 			if (((x*m_inv_K0) % p) == 1) {

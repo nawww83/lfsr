@@ -49,8 +49,13 @@ public:
 template<class Generator>
 auto get_random_state(Generator& g) {
 	STATE st {};
-	for (int i=0; i<m; ++i) {
-		st[i] = g() % p;
+	while (1) {
+		for (int i=0; i<m; ++i) {
+			st[i] = g() % p;
+		}
+		if (st[0] != 0) {
+			break;
+		}
 	}
 	return st;
 }
@@ -79,9 +84,6 @@ auto find_max_period_polynomial(long long& T) {
 	const long long T_ref = std::pow(p, m) - 1;
 	while (T != T_ref) {
 		K = get_random_state(r);
-		if (K[0] == 0) {
-			continue;
-		}
 		g.set_K(K);
 		T = calculate_period(g);
 	}
@@ -98,9 +100,6 @@ void test_next_back() {
 		while (iter < iters) {
 			//
 			K = get_random_state(r);
-			if (K[0] == 0) {
-				continue;
-			}
 			g.set_K(K);
 
 			g.set_unit_state();
@@ -142,10 +141,11 @@ int main() {
 	cout << K[m-1] << ")" << endl;
 	auto T_str = std::to_string(T);
 	cout << "Period T: " << add_separators(T_str) << endl;
-
+	
 	//
-	// cout << "Wait for Next-Back test..." << endl;
-	// test_next_back();
+	cout << "Wait for Next-Back test..." << endl;
+	test_next_back();
+	cout << "Completed." << endl;
 	//
 
     return 0;
