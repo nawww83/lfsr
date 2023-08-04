@@ -24,15 +24,16 @@ constexpr auto is_prime() {
 	return ok;
 }
 
-auto add_separators(std::string& value, char thousandSep = '\'') {
-    int len = value.length();
-    int dlen = 3;
-    while (len > dlen) {
-        value.insert(len - dlen, 1, thousandSep);
-        dlen += 4;
-        len += 1;
-    }
-    return value;
+template <typename T>
+std::string format_with_commas(T x) {
+	auto s = std::to_string(x);
+	int n = s.length() - 3;
+	const int stop = (x >= 0) ? 0 : 1;
+	while (n > stop) {
+		s.insert(n, "'");
+		n -= 3;
+	}
+	return s;
 }
 
 template <typename T>
@@ -139,9 +140,10 @@ int main() {
 		cout << K[i] << ", ";
 	}
 	cout << K[m-1] << ")" << endl;
-	auto T_str = std::to_string(T);
-	cout << "Period T: " << add_separators(T_str) << endl;
-	
+	// auto T_str = std::to_string(T);
+	// cout << "Period T: " << add_separators(T_str) << endl;
+	auto T_str = format_with_commas(T);
+	cout << "Period T: " << T_str << endl;
 	//
 	cout << "Wait for Next-Back test..." << endl;
 	test_next_back();
