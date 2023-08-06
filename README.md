@@ -5,7 +5,7 @@ Prime number $p$ and register length $m$ are used.
 
 It contains function find_max_period_polynomial() to find vector of coefficients $K$ that provide maximal period $T = p^m - 1$.
 ## Build
-g++ main.cpp -std=c++17 -O3 -o lfsr
+g++ main.cpp lfsr_hash.cpp -std=c++17 -O3 -o lfsr
 ## Run
 ./lfsr
 ## Possible output
