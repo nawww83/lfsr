@@ -2,11 +2,12 @@
 #include <random>
 #include <cmath>
 #include <cstring>
+#include <set>
 
 #include "lfsr_hash.hpp"
 
 
-constexpr int p = 131;
+constexpr int p = 251;
 constexpr int m = 4;
 
 using LFSR = lfsr8::LFSR<p, m>;
@@ -51,6 +52,22 @@ template<class Generator>
 auto get_random_state(Generator& g) {
 	STATE st {};
 	while (1) {
+		int sum = 0;
+		for (int i=0; i<m; ++i) {
+			st[i] = g() % p;
+			sum += st[i];
+		}
+		if (sum != 0) {
+			break;
+		}
+	}
+	return st;
+}
+
+template<class Generator>
+auto get_random_coeffs(Generator& g) {
+	STATE st {};
+	while (1) {
 		for (int i=0; i<m; ++i) {
 			st[i] = g() % p;
 		}
@@ -63,29 +80,74 @@ auto get_random_state(Generator& g) {
 
 auto calculate_period(LFSR& g) {
 	long long T = 1;
-	// const auto old_state = g.get_state();
-	g.set_unit_state();
-	g.saturate();
+	const long long T0 = std::pow(p, m) - 1;
 	const auto ref = g.get_state();
 	while (true) {
 		g.next();
 		if (g.is_state(ref))
 			break;
 		T += 1;
+		if (T > T0) {
+			T = 0; // Abnormal period: unachievable state
+			break;
+		}
 	}
-	// g.set_state(old_state);
 	return T;
 }
 
-auto find_max_period_polynomial(long long& T) {
+auto research_periods(LFSR& g, int iters) {
+	GeometricDistribution<int> r(0.3);
+	std::set<long long> Ts;
+	const long long T0 = std::pow(p, m) - 1;
+	int iter = 0;
+	while (true) {
+		auto st = get_random_state(r);
+		g.set_state(st);
+		auto T = calculate_period(g);
+		if (T < 1) {
+			std::cout << "Abnormal period detected! Skip it." << std::endl;
+			continue;
+		}
+		Ts.insert( T );
+		if (T == T0) {
+			break;
+		}
+		++iter;
+		if (iter >= iters) {
+			break;
+		}
+	}
+	return Ts;
+}
+
+auto find_T1_polynomial(long long& T) {
 	STATE K = {1};
 	LFSR g(K);
 	GeometricDistribution<int> r(0.3);
-	T = 0;
+	T = 1;
+	const long long T_ref = std::pow(p, m-1) - 1;
+	while (true) {
+		K = get_random_coeffs(r);
+		g.set_K(K);
+		auto Ts = research_periods(g, 10);
+		if (Ts.contains(T_ref)) {
+			T = T_ref;
+			break;
+		}
+	}
+	return K;
+}
+
+auto find_T0_polynomial(long long& T) {
+	STATE K = {1};
+	LFSR g(K);
+	GeometricDistribution<int> r(0.3);
+	T = 1;
 	const long long T_ref = std::pow(p, m) - 1;
 	while (T != T_ref) {
-		K = get_random_state(r);
+		K = get_random_coeffs(r);
 		g.set_K(K);
+		g.set_state(K);
 		T = calculate_period(g);
 	}
 	return K;
@@ -100,7 +162,7 @@ void test_next_back() {
 		int iter = 0;
 		while (iter < iters) {
 			//
-			K = get_random_state(r);
+			K = get_random_coeffs(r);
 			g.set_K(K);
 
 			g.set_unit_state();
@@ -132,22 +194,31 @@ int main() {
 	
 	cout << "LFSR with modulo p: " << p << ", length m: " << m << endl;
 	
-	cout << "Wait for max period T = p^m - 1 polynomial look up..." << endl;
+	cout << "Wait for maximal period T0 = p^m - 1 polynomial look up..." << endl;
 	long long T;
-	STATE K = find_max_period_polynomial(T);
-	cout << "Found coefficients K: (";
+	STATE K = find_T0_polynomial(T);
+	cout << " Found coefficients K: (";
 	for (int i=0; i<m-1; ++i) {
 		cout << K[i] << ", ";
 	}
 	cout << K[m-1] << ")" << endl;
-	// auto T_str = std::to_string(T);
-	// cout << "Period T: " << add_separators(T_str) << endl;
 	auto T_str = format_with_commas(T);
-	cout << "Period T: " << T_str << endl;
+	cout << " Period T0: " << T_str << endl;
+	//
+	cout << "Wait for period T1 = p^(m-1) - 1 polynomial look up..." << endl;
+	K = find_T1_polynomial(T);
+	cout << " Found coefficients K: (";
+	for (int i=0; i<m-1; ++i) {
+		cout << K[i] << ", ";
+	}
+	cout << K[m-1] << ")" << endl;
+	T_str = format_with_commas(T);
+	cout << " Period T1: " << T_str << endl;
+	//
 	//
 	cout << "Wait for Next-Back test..." << endl;
 	test_next_back();
-	cout << "Completed." << endl;
+	cout << " Completed." << endl;
 	//
 
 	uint8_t v[32];

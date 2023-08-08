@@ -3,16 +3,11 @@ Linear Feedback Shift Registers, LFSR, and its applications.
 
 Prime number $p$ and register length $m$ are used.
 
-It contains function find_max_period_polynomial() to find vector of coefficients $K$ that provide maximal period $T = p^m - 1$.
+It contains some functions to find vectors of coefficients $K$ that provide periods $T0 = p^m - 1$ and $T1 = p^m-1 - 1$.
+
+A 16-bit hash is calculated using XOR combination of two LFSR pairs: $p = 251$ and $p = 241$ with the periods T0 and T1 for each $p$.
+
 ## Build
-g++ main.cpp lfsr_hash.cpp -std=c++17 -O3 -o lfsr
+g++ main.cpp lfsr_hash.cpp -std=c++20 -O3 -o lfsr
 ## Run
 ./lfsr
-## Possible output
-LFSR with modulo p: 131, length m: 4
-
-Wait for max period T = p^m - 1 polynomial look up...
-
-Found coefficients K: (7, 1, 0, 0)
-
-Period T: 294'499'920

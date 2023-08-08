@@ -7,10 +7,10 @@ using LFSR251x4 = lfsr8::LFSR<251, 4>;
 using LFSR241x4 = lfsr8::LFSR<241, 4>;
 using STATE = lfsr8::u32x8;
 
-static constexpr STATE K1 = {1, 3, 1, 1};
-static constexpr STATE K2 = {2, 1, 1, 1};
-static constexpr STATE K3 = {1, 1, 4, 1};
-static constexpr STATE K4 = {7, 1, 5, 1};
+static constexpr STATE K1 = {3, 0, 0, 5};
+static constexpr STATE K2 = {3, 7, 1, 7};
+static constexpr STATE K3 = {7, 10, 1, 4};
+static constexpr STATE K4 = {6, 1, 4, 2};
 
 struct salt {
     lfsr8::u32 s0;
