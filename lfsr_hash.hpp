@@ -19,6 +19,9 @@ struct salt {
     lfsr8::u32 s3;
 };
 
+static constexpr salt S0 {2, 3, 4, 6};
+static constexpr salt S1 {2, 1, 3, 7};
+
 
 struct gens {
     LFSR251x4 g1_251x4;
@@ -36,23 +39,27 @@ public:
         g1_241x4.set_unit_state();
         g2_241x4.set_unit_state();
     }
-    void salt(salt s, int q) {
-        for (int i=0; i<q; ++i) {
-            g1_251x4.next(s.s0);
-            g2_251x4.next(s.s1);
-            g1_241x4.next(s.s2);
-            g2_241x4.next(s.s3);
+    void process_input(const uint8_t* input, int n) {
+        for (int i=0; i<5; ++i) {
+            g1_251x4.next(S0.s0);
+            g2_251x4.next(S0.s1);
+            g1_241x4.next(S0.s2);
+            g2_241x4.next(S0.s3);
         }
-    }
-    void do_main_loop(const uint8_t* input, int n) {
         for (int i=0; i<n; ++i) {
             g1_251x4.next(input[i]);
-            g2_251x4.next(input[n-i-1]);
-            g1_241x4.next(input[i]);
+            g2_251x4.next(input[i]);
+            g1_241x4.next(input[n-i-1]);
             g2_241x4.next(input[n-i-1]);
         }
+        for (int i=0; i<6; ++i) {
+            g1_251x4.next(S1.s0);
+            g2_251x4.next(S1.s1);
+            g1_241x4.next(S1.s2);
+            g2_241x4.next(S1.s3);
+        }
     }
-    auto get_hash() {
+    auto form_hash() {
         lfsr8::u16 hash;
         auto st11 = g1_251x4.get_state();
         auto st21 = g2_251x4.get_state();

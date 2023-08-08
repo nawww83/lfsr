@@ -6,6 +6,8 @@
 
 #include "lfsr_hash.hpp"
 
+#include "timer.hpp"
+
 
 constexpr int p = 251;
 constexpr int m = 4;
@@ -95,7 +97,7 @@ auto calculate_period(LFSR& g) {
 	return T;
 }
 
-auto research_periods(LFSR& g, int iters) {
+auto research_periods(LFSR& g, long long max_T, int iters) {
 	GeometricDistribution<int> r(0.3);
 	std::set<long long> Ts;
 	const long long T0 = std::pow(p, m) - 1;
@@ -107,6 +109,9 @@ auto research_periods(LFSR& g, int iters) {
 		if (T < 1) {
 			std::cout << "Abnormal period detected! Skip it." << std::endl;
 			continue;
+		}
+		if (T > max_T) {
+			break;
 		}
 		Ts.insert( T );
 		if (T == T0) {
@@ -129,7 +134,7 @@ auto find_T1_polynomial(long long& T) {
 	while (true) {
 		K = get_random_coeffs(r);
 		g.set_K(K);
-		auto Ts = research_periods(g, 10);
+		auto Ts = research_periods(g, T_ref, 30);
 		if (Ts.contains(T_ref)) {
 			T = T_ref;
 			break;
@@ -189,41 +194,61 @@ void test_next_back() {
 
 int main() {
 	using namespace std;
+
+	timer_n::Timer timer;
 	
 	static_assert(is_prime<p>());
 	
 	cout << "LFSR with modulo p: " << p << ", length m: " << m << endl;
-	
-	cout << "Wait for maximal period T0 = p^m - 1 polynomial look up..." << endl;
-	long long T;
-	STATE K = find_T0_polynomial(T);
-	cout << " Found coefficients K: (";
-	for (int i=0; i<m-1; ++i) {
-		cout << K[i] << ", ";
+	{
+		cout << "Wait for maximal period T0 = p^m - 1 polynomial look up..." << endl;
+		long long T;
+		timer.reset();
+		STATE K = find_T0_polynomial(T);
+		auto dt = 1.e-9*timer.elapsed_ns();
+		cout << " Found coefficients K: (";
+		for (int i=0; i<m-1; ++i) {
+			cout << K[i] << ", ";
+		}
+		cout << K[m-1] << ")" << ", dt: " << dt << " sec." << endl;
+		auto T_str = format_with_commas(T);
+		cout << " Period T0: " << T_str << endl;
 	}
-	cout << K[m-1] << ")" << endl;
-	auto T_str = format_with_commas(T);
-	cout << " Period T0: " << T_str << endl;
 	//
-	cout << "Wait for period T1 = p^(m-1) - 1 polynomial look up..." << endl;
-	K = find_T1_polynomial(T);
-	cout << " Found coefficients K: (";
-	for (int i=0; i<m-1; ++i) {
-		cout << K[i] << ", ";
+	{
+		long long T;
+		cout << "Wait for period T1 = p^(m-1) - 1 polynomial look up..." << endl;
+		timer.reset();
+		STATE K = find_T1_polynomial(T);
+		auto dt = 1.e-9*timer.elapsed_ns();
+		cout << " Found coefficients K: (";
+		for (int i=0; i<m-1; ++i) {
+			cout << K[i] << ", ";
+		}
+		cout << K[m-1] << ")" << ", dt: " << dt << " sec." << endl;
+		auto T_str = format_with_commas(T);
+		cout << " Period T1: " << T_str << endl;
 	}
-	cout << K[m-1] << ")" << endl;
-	T_str = format_with_commas(T);
-	cout << " Period T1: " << T_str << endl;
 	//
 	//
-	cout << "Wait for Next-Back test..." << endl;
-	test_next_back();
-	cout << " Completed." << endl;
+	{
+		cout << "Wait for Next-Back test..." << endl;
+		test_next_back();
+		cout << " Completed." << endl;
+	}
 	//
-
-	uint8_t v[32];
-	auto hash = lfsr_hash::hash(v, 32);
-	cout << "LFSR 16 bit hash: " << std::hex << hash << std::dec << endl;
+	{
+		const int N = 65536*16;
+		auto v = new uint8_t[N];
+		assert(v != nullptr);
+		cout << "Input array of " << N << " bytes is allocated." << endl;
+		timer.reset();
+		auto hash = lfsr_hash::hash(v, N);
+		auto dt = timer.elapsed_ns();
+		double perf = (1.e3*N)/dt;
+		delete [] v;
+		cout << "LFSR 16 bit hash: " << std::hex << hash << std::dec << ", perf: " << perf << " MB/s." << endl;
+	}
 
     return 0;
 }
