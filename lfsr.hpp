@@ -85,4 +85,43 @@ private:
 	}
 };
 
+template <int p>
+class LFSR_paired_2x4 {
+	static_assert(p < 256);
+	static_assert(p > 1);
+public:
+	constexpr LFSR_paired_2x4(u16x8 K): m_K(K) {};
+	void set_state(u16x8 state) {
+		m_state = state;
+		m_v3 = m_state[3];
+		m_v7 = m_state[7];
+	}
+   	void set_unit_state() {
+		m_state = {1, 0, 0, 0, 1, 0, 0, 0};
+		m_v3 = m_state[3];
+		m_v7 = m_state[7];
+	}
+	void set_K(u16x8 K) {
+		m_K = K;
+	}
+	void next(u16 input=0) {		
+		for (int i=7; i>4; i--) {
+	        m_state[i] = (m_state[i-1] + m_v7*m_K[i]) % p;
+			m_state[i-4] = (m_state[i-1-4] + m_v3*m_K[i-4]) % p;
+		}
+		m_state[0] = (input + m_v3*m_K[0]) % p;
+		m_state[4] = (input + m_v7*m_K[4]) % p;
+		m_v3 = m_state[3];
+		m_v7 = m_state[7];
+	}
+	auto get_state() const {
+		return m_state;
+	}
+private:
+	u16x8 m_state {};
+	u16x8 m_K {};
+	u16 m_v3 {};
+	u16 m_v7 {};
+};
+
 }
