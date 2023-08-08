@@ -13,7 +13,7 @@ constexpr int p = 251;
 constexpr int m = 4;
 
 using LFSR = lfsr8::LFSR<p, m>;
-using STATE = lfsr8::u32x8;
+using STATE = lfsr8::u16x8;
 
 
 template<int x>

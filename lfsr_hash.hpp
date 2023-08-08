@@ -5,7 +5,7 @@ namespace lfsr_hash {
 
 using LFSR251x4 = lfsr8::LFSR<251, 4>;
 using LFSR241x4 = lfsr8::LFSR<241, 4>;
-using STATE = lfsr8::u32x8;
+using STATE = lfsr8::u16x8;
 
 static constexpr STATE K1 = {3, 0, 0, 5};
 static constexpr STATE K2 = {3, 7, 1, 7};
@@ -13,10 +13,10 @@ static constexpr STATE K3 = {7, 10, 1, 4};
 static constexpr STATE K4 = {6, 1, 4, 2};
 
 struct salt {
-    lfsr8::u32 s0;
-    lfsr8::u32 s1;
-    lfsr8::u32 s2;
-    lfsr8::u32 s3;
+    lfsr8::u16 s0;
+    lfsr8::u16 s1;
+    lfsr8::u16 s2;
+    lfsr8::u16 s3;
 };
 
 static constexpr salt S0 {2, 3, 4, 6};
@@ -73,5 +73,6 @@ public:
 };
 
 lfsr8::u16 hash(const uint8_t* input, int n);
+
 
 }
