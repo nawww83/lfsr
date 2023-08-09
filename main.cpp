@@ -13,7 +13,7 @@ constexpr int p = 251;
 constexpr int m = 4;
 
 using LFSR = lfsr8::LFSR<p, m>;
-using STATE = lfsr8::u16x8;
+using STATE = lfsr8::MType<m>::STATE;
 
 
 template<int x>
@@ -86,13 +86,15 @@ auto calculate_period(LFSR& g) {
 	const auto ref = g.get_state();
 	while (true) {
 		g.next();
-		if (g.is_state(ref))
-			break;
-		T += 1;
-		if (T > T0) {
-			T = 0; // Abnormal period: unachievable state
+		if (g.is_state(ref)) {
 			break;
 		}
+		T += 1;
+		if (T <= T0) {
+			continue;
+		}
+		T = 0; // Abnormal period: unachievable state
+		break;
 	}
 	return T;
 }
@@ -191,11 +193,10 @@ void test_next_back() {
 }
 
 
+static timer_n::Timer timer;
 
 int main() {
 	using namespace std;
-
-	timer_n::Timer timer;
 	
 	static_assert(is_prime<p>());
 	
@@ -215,6 +216,7 @@ int main() {
 		cout << " Period T0: " << T_str << endl;
 	}
 	//
+	
 	{
 		long long T;
 		cout << "Wait for period T1 = p^(m-1) - 1 polynomial look up..." << endl;
@@ -229,13 +231,16 @@ int main() {
 		auto T_str = format_with_commas(T);
 		cout << " Period T1: " << T_str << endl;
 	}
+	
 	//
 	//
+	
 	{
 		cout << "Wait for Next-Back test..." << endl;
 		test_next_back();
 		cout << " Completed." << endl;
 	}
+	
 	//
 	{
 		const int N = 65536*16;

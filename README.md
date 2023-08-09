@@ -8,6 +8,6 @@ It contains some functions to find vectors of coefficients $K$ that provide peri
 A 16-bit hash is calculated using XOR combination of two LFSR pairs: $p = 251$ and $p = 241$ with the periods $T_0$ and $T_1$ for each $p$. Also, 32-bit hash is added.
 
 ## Build
-g++ main.cpp lfsr_hash.cpp -std=c++20 -O3 -o lfsr
+g++ main.cpp lfsr_hash.cpp -std=c++20 -msse4.1 -O3 -o lfsr
 ## Run
 ./lfsr
