@@ -43,16 +43,15 @@ public:
         }
     }
     void process_input(const uint8_t* input, int n) {
-        for (int i=0; i<n; ++i) {
-            g_251x4.next(input[i]);
-            g_241x4.next(input[n-i-1]);
+        for (int i=0; i<n/2; ++i) {
+            g_251x4.next(*(u16*)(input + 2*i));
+            g_241x4.next(*(u16*)(input + n + (n % 2) - 2 - 2*i));
         }
     }
     auto form_hash16() {
-        lfsr8::u16 hash;
         auto st1 = g_251x4.get_state();
         auto st2 = g_241x4.get_state();
-        hash = (st1[0] ^ st1[4] ^ st2[0] ^ st2[4]) ^ (st1[2] ^ st1[6] ^ st2[2] ^ st2[6]);
+        lfsr8::u16 hash = (st1[0] ^ st1[4] ^ st2[0] ^ st2[4]) ^ (st1[2] ^ st1[6] ^ st2[2] ^ st2[6]);
         hash <<= 8;
         hash |= (st1[1] ^ st1[5] ^ st2[1] ^ st2[5]) ^ (st1[3] ^ st1[7] ^ st2[3] ^ st2[7]);
         return hash;

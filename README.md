@@ -11,3 +11,6 @@ It contains some functions to find vectors of coefficients $K$ that provide peri
 g++ main.cpp lfsr_hash.cpp -std=c++20 -msse4.1 -O3 -o lfsr
 ## Run
 ./lfsr
+
+## Hash performance
+Approx. 210 MB/s @ Intel i7-8565U CPU 4.2GHz, GCC 11.4
