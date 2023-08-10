@@ -8,6 +8,7 @@ using LFSR241x4 = lfsr8::LFSR_paired_2x4<241>;
 using STATE = lfsr8::u16x8;
 using u16 = lfsr8::u16;
 using u32 = lfsr8::u32;
+using u64 = lfsr8::u64;
 
 static constexpr STATE K1 = {7, 1, 6, 0, 4, 1, 3, 2};    // p=251
 static constexpr STATE K2 = {13, 2, 5, 10, 7, 0, 10, 1}; // p=241
@@ -21,6 +22,8 @@ struct salt {
 static constexpr salt S0 {7, 2, 3};
 static constexpr salt S1 {6, 4, 7};
 static constexpr salt S2 {31, 8, 11};
+static constexpr salt S3 {29, 9, 5};
+static constexpr salt S4 {37, 2, 13};
 
 
 struct gens {
@@ -58,5 +61,7 @@ public:
 
 u16 hash16(const uint8_t* input, int n);
 u32 hash32(const uint8_t* input, int n);
+u64 hash64(const uint8_t* input, int n);
+
 
 }

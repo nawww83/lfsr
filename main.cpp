@@ -9,7 +9,7 @@
 #include "timer.hpp"
 
 
-constexpr int p = 251;
+constexpr int p = 131;
 constexpr int m = 4;
 
 using LFSR = lfsr8::LFSR<p, m>;
@@ -258,9 +258,31 @@ int main() {
 		auto dt2 = timer.elapsed_ns();
 		double perf2 = (1.e3*N)/dt2;
 
+		timer.reset();
+		auto hash64 = lfsr_hash::hash64(v, N);
+		auto dt3 = timer.elapsed_ns();
+		double perf3 = (1.e3*N)/dt3;
+
+		// small input influence test
+		v[0] += 1;
+		auto hash64_0p = lfsr_hash::hash64(v, N);
+		v[0] -= 1;
+		v[N-1] += 1;
+		auto hash64_1p = lfsr_hash::hash64(v, N);
+		v[N-1] -= 1;
+		v[N/2] += 1;
+		auto hash64_hp = lfsr_hash::hash64(v, N);
+		v[N/2] -= 1;
+		//
+
 		delete [] v;
-		cout << "LFSR 16 bit hash: " << std::hex << hash16 << std::dec << ", perf: " << perf1 << " MB/s." << endl;
-		cout << "LFSR 32 bit hash: " << std::hex << hash32 << std::dec << ", perf: " << perf2 << " MB/s." << endl;
+		cout << "LFSR 16-bit hash: " << std::hex << hash16 << std::dec << ", perf: " << perf1 << " MB/s." << endl;
+		cout << "LFSR 32-bit hash: " << std::hex << hash32 << std::dec << ", perf: " << perf2 << " MB/s." << endl;
+		cout << "LFSR 64-bit hash: " << std::hex << hash64 << std::dec << ", perf: " << perf3 << " MB/s." << endl;
+
+		cout << "LFSR 64-bit hash 0p: " << std::hex << hash64_0p << std::dec << endl;
+		cout << "LFSR 64-bit hash 1p: " << std::hex << hash64_1p << std::dec << endl;
+		cout << "LFSR 64-bit hash hp: " << std::hex << hash64_hp << std::dec << endl;
 	}
 
     return 0;

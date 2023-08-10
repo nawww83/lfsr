@@ -21,3 +21,20 @@ lfsr_hash::u32 lfsr_hash::hash32(const uint8_t* input, int n) {
     u32 h2 = g.form_hash16();
     return h1 | (h2 << 16);
 }
+
+lfsr_hash::u64 lfsr_hash::hash64(const uint8_t* input, int n) {
+    g.reset();
+    g.add_salt(S0);
+    g.add_salt(S1);
+    g.process_input(input, n);
+    g.add_salt(S1);
+    g.add_salt(S0);
+    u64 h1 = g.form_hash16();
+    g.add_salt(S2);
+    u64 h2 = g.form_hash16();
+    g.add_salt(S3);
+    u64 h3 = g.form_hash16();
+    g.add_salt(S4);
+    u64 h4 = g.form_hash16();
+    return ((h1 | (h2 << 16)) << 32) |  (h3 | (h4 << 16));
+}
