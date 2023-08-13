@@ -1,5 +1,5 @@
-# Linear Feedback Shift Registers
-Linear Feedback Shift Registers, LFSR, and its cryptographic applications.
+# Linear Feedback Shift Registers (LFSR) in cryptography
+LFSR and its cryptographic applications.
 
 Prime number $p$ and register length $m$ are used.
 
