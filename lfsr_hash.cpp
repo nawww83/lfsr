@@ -38,3 +38,34 @@ lfsr_hash::u64 lfsr_hash::hash64(const uint8_t* input, int n) {
     u64 h4 = g.form_hash16();
     return ((h1 | (h2 << 16)) << 32) |  (h3 | (h4 << 16));
 }
+
+lfsr_hash::u128 lfsr_hash::hash128(const uint8_t* input, int n) {
+    g.reset();
+    g.add_salt(S1);
+    g.add_salt(S0);
+    g.process_input(input, n);
+    g.add_salt(S0);
+    g.add_salt(S1);
+
+    u64 h1 = g.form_hash16();
+    g.add_salt(S3);
+    u64 h2 = g.form_hash16();
+    g.add_salt(S2);
+    u64 h3 = g.form_hash16();
+    g.add_salt(S4);
+    u64 h4 = g.form_hash16();
+
+    g.add_salt(S3);
+    u64 h5 = g.form_hash16();
+    g.add_salt(S2);
+    u64 h6 = g.form_hash16();
+    g.add_salt(S4);
+    u64 h7 = g.form_hash16();
+    g.add_salt(S5);
+    u64 h8 = g.form_hash16();
+    
+    return {
+        ((h1 | (h2 << 16)) << 32) |  (h3 | (h4 << 16)),
+        ((h5 | (h6 << 16)) << 32) |  (h7 | (h8 << 16))
+    };
+}

@@ -263,6 +263,11 @@ int main() {
 		auto dt3 = timer.elapsed_ns();
 		double perf3 = (1.e3*N)/dt3;
 
+		timer.reset();
+		auto hash128 = lfsr_hash::hash128(v, N);
+		auto dt4 = timer.elapsed_ns();
+		double perf4 = (1.e3*N)/dt4;
+
 		// small input influence test
 		v[0] += 1;
 		auto hash64_0p = lfsr_hash::hash64(v, N);
@@ -283,6 +288,8 @@ int main() {
 		cout << "LFSR 64-bit hash 0p: " << std::hex << hash64_0p << std::dec << endl;
 		cout << "LFSR 64-bit hash 1p: " << std::hex << hash64_1p << std::dec << endl;
 		cout << "LFSR 64-bit hash hp: " << std::hex << hash64_hp << std::dec << endl;
+
+		cout << "LFSR 128-bit hash: " << std::hex << hash128.first << ":" << hash128.second << std::dec << ", perf: " << perf4 << " MB/s." << endl;
 	}
 
     return 0;
