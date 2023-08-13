@@ -43,9 +43,10 @@ public:
         }
     }
     void process_input(const uint8_t* input, int n) {
+        assert(n > 1);
         for (int i=0; i<n/2; ++i) {
             g_251x4.next(*(u16*)(input + 2*i));
-            g_241x4.next(*(u16*)(input + n + (n % 2) - 2 - 2*i));
+            g_241x4.next(*(u16*)(input + n - 2 - 2*i));
         }
     }
     auto form_hash16() {
