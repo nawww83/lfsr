@@ -19,7 +19,7 @@ Base unit for LFSR hash is LFSR register which can be interpreted as Finite Stat
 
 Classicaly, LFSR operates with binary symbols, 0 and 1, but nobody forbid us to use any M-ary symbol - integer numbers from 0 to M-1.
 
-Due to special mathematical property of prime numbers, it makes sense to use $M$ as a prime number: $2, 3, 5, 7,...$. That property is the maximal period property when we calculate all integer powers by modulo $p$: ${a}^{i} \mod p, \quad i \in \mathbb{Z}$.
+Due to special mathematical property of prime numbers, it makes sense to use $M$ as a prime number: $2, 3, 5, 7, \ldots{}$ That property is the maximal period property when we calculate all integer powers by modulo $p$: ${a}^{i} \mod p, \quad i \in \mathbb{Z}$.
 
 For example, let's $p=11$, $a=2$, $i=0...10$, so we have the following powers $1, 2, 4, 8, 5, 10, 9, 7, 3, 6, 1$.
 
