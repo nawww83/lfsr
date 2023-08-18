@@ -33,19 +33,12 @@ The last expression is true for all $a$, but not all $a$ give us unique powers. 
 
 The previous example is a $p$-ary LFSR register wtih unit length, $m=1$, but nobody forbid us to use any length $m$. For that case maximal period is $T = {p}^{m} - 1$, and we should find $m$ integer numbers $({a}_{0}, ..., {a}_{m-1})$, which provide maximal period. The $m$ numbers is the coefficients of the generator polynomial $g(x)$ with degree $m$.
 
-If $m=2$, we can express LFSR state $(s_0 ,s_1)$ evolution
-$$(s_0, s_1) = (0, 1), \quad v = s_1 = 1
-\\
-(v a_0, v a_1) + (0, 0) = (a_0, a_1) \mod p, \quad v = a_1
-\\
-(v a_0, v a_1) + (0, a_0) = (a_0 a_1, a_1 a_1 + a_0) \mod p, \quad v = {{a}_{1}}^{2} + a_0
-\\
-(v a_0, v a_1) + (0, a_0 a_1) = ...$$
-
 In general, we use $v$ as the last element of LFSR state $\vec s$, then multiply generator vector $\vec a$ by the scalar $v$, then add the latter to the left shifted by 1 element LFSR state (with zero insertion). Left shift can be interpreted as multiplication by modulo $p$ (the direct analogy is the binary left shift and multiplication by $2$ equivalence), so theoretically we can express LFSR loop in vector form
-$$\vec s = (v \vec a + p\vec s) \mod p
-\\
-v = {s}_{m-1}$$
+$$\begin{matrix}
+\vec s =& (v \vec a + p\vec s) \mod p \newline
+v =& {s}_{m-1}
+\end{matrix}$$
+
 
 High symbols of $\vec s$, i.e. $s_m$, ${s}_{m+1}, ...$ can be ignored.
 
