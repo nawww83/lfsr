@@ -58,3 +58,5 @@ For states combination, the bit-wise XOR operator is chosen. We chose $m=4$ with
 Two generators ${\vec g}^{(0)}$ and ${\vec g}^{(1)}$ are packed into one SIMD 128-bit vector in C++ code for better SIMD registers usage. Such generator is called as **LFSR pair**.
 
 We use two LFSR pairs, with $p=251$ and $p=241$. Final states of two pairs are XOR-ed as usual. So, the total free period of given LFSR hash is about ${251}^{6} \cdot {241}^{6} \approx 95$ bits, i.e. ${2}^{95} \approx {10}^{28}$.
+
+To improve the crypto resilience, the first LFSR pair is driven by the original input, but the second pair is driven by reversed input vector. Also, the salt is added before and after input loop. The minimal size of the input vector is 2 elements.
