@@ -3,7 +3,7 @@ LFSR and its cryptographic applications.
 
 Prime number $p$ and register length $m$ are used.
 
-You can calculate 16, 32, 64 and 128-bit **cryptographic** hashes.
+You can calculate 32, 64 and 128-bit **cryptographic** hashes with **salt**. Also, you can add 256-bit hash etc using similar extention approach as you need.
 Additionally, src code contains some functions to find vectors of coefficients $K$ that provide periods $T_0 = {p}^{m} - 1$ and $T_1 = {p}^{m-1} - 1$.
 
 ## Build
