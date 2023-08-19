@@ -38,7 +38,7 @@ Here the delay operator $D[\vec v, 1]$ means $(v_0, v_1, v_2, ...) \rightarrow (
 
 As a rule, LFSR is initialized by unit state $\vec s = (1, 0, 0, ... , 0)$. Having $m$ cycles, LFSR will be in the state $\vec s = \vec a$ exactly, which is the same as generator coefficients. So, we consider that LFSR is **saturated** at that moment. When we continue cycles, we will observe some different states, and at some moment the current state will be equal to the initial state $\vec a$. What cycles we done between two equal states will determine LFSR period $T$.
 
-If a generator $\vec g$ provides maximal period $T = {T}_{max} = p^m - 1$, then LFSR evolutes all possible states $\vec s$ except zero-state, and it doesn't matter what the initial state has been set. For a period $T < {T}_{\max}$ the initial state has some influence, but most of initial states will provide the fix period which can be called as the "main period".
+If a generator $\vec g$ provides maximal period $T = T_{max} = p^m - 1$, then LFSR evolutes all possible states $\vec s$ except zero-state, and it doesn't matter what the initial state has been set. For a period $T < {T}_{\max}$ the initial state has some influence, but most of initial states will provide the fix period which can be called as the "main period".
 
 It was numerically shown there are generators $\vec g$ which provide period $T_1 = {p}^{m-1} - 1$, wherein the maximal period is marked as $T_0 \equiv {T}_{\max}$. In general, we can write $T_q = {p}^{m-q} - 1$.
 
@@ -51,7 +51,7 @@ Here the delay operator $D[\vec v, a, 1]$ means $(v_0, v_1, v_2, ...) \rightarro
 Note, all discussed LFSR periods have sense for zero input. That periods can be called as "free periods".
 
 If we have two LFSR generators, with periods $T_0$ and $T_1$ and common input, we can combine (mix) the final LFSR states into one state that can be interpreted as LFSR hash of the input. Two periods have Greatest Common Divisor $p-1$, so for zero input we will have the total period
-$$ {{T_0 T_1} \over {p-1}} \approx {p}^{2m-2} \approx {T_1}^{2}.$$
+$${{T_0 T_1} \over {p-1}} \approx p^{2m-2} \approx {T_1}^{2}.$$
 
 For states combination, the bit-wise XOR operator is chosen. We chose $m=4$ with $p=251$ and $p=241$.
 
