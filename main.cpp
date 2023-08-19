@@ -249,11 +249,6 @@ int main() {
 		cout << "Input array of " << N << " bytes is allocated." << endl;
 		
 		timer.reset();
-		auto hash16 = lfsr_hash::hash16(v, N);
-		auto dt1 = timer.elapsed_ns();
-		double perf1 = (1.e3*N)/dt1;
-		
-		timer.reset();
 		auto hash32 = lfsr_hash::hash32(v, N);
 		auto dt2 = timer.elapsed_ns();
 		double perf2 = (1.e3*N)/dt2;
@@ -281,7 +276,6 @@ int main() {
 		//
 
 		delete [] v;
-		cout << "LFSR 16-bit hash: " << std::hex << hash16 << std::dec << ", perf: " << perf1 << " MB/s." << endl;
 		cout << "LFSR 32-bit hash: " << std::hex << hash32 << std::dec << ", perf: " << perf2 << " MB/s." << endl;
 		cout << "LFSR 64-bit hash: " << std::hex << hash64 << std::dec << ", perf: " << perf3 << " MB/s." << endl;
 
