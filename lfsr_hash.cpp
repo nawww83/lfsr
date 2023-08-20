@@ -49,6 +49,6 @@ lfsr_hash::u128 lfsr_hash::hash128(const uint8_t* input, int n) {
     
     return {
         h1 | (h2 << 32),
-        h3 | (h4 << 16)
+        h3 | (h4 << 32)
     };
 }

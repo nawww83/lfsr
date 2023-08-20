@@ -36,7 +36,7 @@ Higher symbols of $\vec s$, i.e. $s_m$, ${s}_{m+1},...$ can be ignored.
 
 Here the delay operator $D[\vec v, 1]$ means $(v_0, v_1, v_2, ...) \rightarrow (0, v_0, v_1, v_2, ...)$ transformation for any vector $\vec v$.
 
-As a rule, LFSR is initialized by unit state $\vec s = (1, 0, 0, ... , 0)$. Having $m$ cycles, LFSR will be in the state $\vec s = \vec a$ exactly, which is the same as generator coefficients. So, we consider that LFSR is **saturated** at that moment. When we continue cycles, we will observe some different states, and at some moment the current state will be equal to the initial state $\vec a$. What cycles we done between two equal states will determine LFSR period $T$.
+As a rule, LFSR is initialized by unit state $\vec s = (1, 0, 0, ... , 0)$. Having $m$ cycles, LFSR will be in the state $\vec s = \vec g$ exactly, which is the same as generator coefficients. So, we consider that LFSR is **saturated** at that moment. When we continue cycles, we will observe some different states, and at some moment the current state will be equal to the initial state $\vec a$. What cycles we done between two equal states will determine LFSR period $T$.
 
 If a generator $\vec g$ provides maximal period $T = T_{max} = p^m - 1$, then LFSR evolutes all possible states $\vec s$ except zero-state, and it doesn't matter what the initial state has been set. For a period $T < {T}_{\max}$ the initial state has some influence, but most of initial states will provide the fix period which can be called as the "main period".
 
@@ -55,8 +55,10 @@ $${{T_0 T_1} \over {p-1}} \approx p^{2m-2} \approx {T_1}^{2}.$$
 
 For states combination, the bit-wise XOR operator is chosen. We chose $m=4$ with $p=251$ and $p=241$.
 
-Two generators ${\vec g}^{(0)}$ and ${\vec g}^{(1)}$ are packed into one SIMD 128-bit vector in C++ code for better SIMD registers usage. Such generator is called as **LFSR pair**.
+Two generators ${\vec g}^{(0)}$ and ${\vec g}^{(1)}$ are packed into one SIMD 128-bit vector in C++ code for better SIMD registers usage. Such generator is called as **LFSR pair**. For better performance, the input is processed by 16-bit samples.
 
 We use two LFSR pairs, with $p=251$ and $p=241$. Final states of two pairs are XOR-ed as usual. So, the total free period of given LFSR hash is about ${251}^{6} \cdot {241}^{6} \approx 95$ bits, i.e. ${2}^{95} \approx {10}^{28}$.
 
-To improve the crypto resilience, the first LFSR pair is driven by the original input, but the second pair is driven by reversed input vector. Also, the salt is added before and after input loop. The minimal size of the input vector is 2 elements.
+To improve the crypto resilience, the first LFSR pair is driven by the original input, but the second pair is driven by reversed input vector. Also, the salt is added before and after input loop. The minimal size of the input vector is $2$ elements.
+
+Bit scaling of LFSR hash is done by salt adding.
