@@ -28,7 +28,7 @@ The last expression is true for all $g$, but not all $g$ give us unique powers. 
 
 The previous example is a $p$-ary LFSR register wtih unit length, $m=1$, but nobody forbid us to use any length $m$. For that case maximal period is $T = {p}^{m} - 1$, and we should find $m$ integer numbers $\left( g_0, \ldots{}, g_{m-1} \right)$, which will provide maximal period. The $m$ numbers is the coefficients of the generator polynomial $g(x) = x^m - {g}_{m-1} {x}^{m-1} - \ldots{} - g_0$ with degree $m$.
 
-In general, we use $v$ as the last element of LFSR state $\vec s$, multiply generator vector $\vec g$ by the scalar $v$, and then add the product to the 1-delayed LFSR state (padded by zero). So we can express LFSR loop in vector form
+In general, we use $v$ as the last element of LFSR state $\vec s$, multiply generator vector $\vec g$ by the scalar $v$, and then add the product to the 1-delayed LFSR state (padded by zero). So we can express LFSR cycle in vector form
 $$\vec s = \left( v \vec g + D[\vec s, 1] \right) \mod p,$$
 $$v = {s}_{m-1}.$$
 
@@ -36,13 +36,13 @@ Higher symbols of $\vec s$, i.e. $s_m$, ${s}_{m+1},...$ can be ignored.
 
 Here the delay operator $D[\vec v, 1]$ means $(v_0, v_1, v_2, ...) \rightarrow (0, v_0, v_1, v_2, ...)$ transformation for any vector $\vec v$.
 
-As a rule, LFSR is initialized by unit state $\vec s = (1, 0, 0, ... , 0)$. Having $m$ cycles, LFSR will be in the state $\vec s = \vec g$ exactly, which is the same as generator coefficients. So, we consider that LFSR is **saturated** at that moment. When we continue cycles, we will observe some different states, and at some moment the current state will be equal to the initial state $\vec g$. What cycles we done between two equal states will determine LFSR period $T$.
+As a rule, LFSR is initialized by unit state $\vec s = (1, 0, 0, ... , 0)$. After $m$ cycles, LFSR will be in state $\vec s = \vec g$, which is equal to the generator coefficients. We consider that LFSR is **saturated** at that moment. When we continue cycles, we will observe different states, and at some point the current state will be equal to the initial one $\vec g$. The number of completed cycles will determine the period $T$ of the generator.
 
-If a generator $\vec g$ provides maximal period $T = T_{max} = p^m - 1$, then LFSR evolutes all possible states $\vec s$ except zero-state, and it doesn't matter what the initial state has been set. For a period $T < {T}_{\max}$ the initial state has some influence, but most of initial states will provide the fix period which can be called as the "main period".
+If some generator $\vec g$ provides the maximum period $T = T_{max} = p^m - 1$, then LFSR goes through all states $\vec s$ except zero, and it doesn't matter what initial state was set. For periods $T < {T}_{\max}$, the initial state affects the period, however most initial states will provide a fixed period, which can be called the **main period**.
 
 It was numerically shown there are generators $\vec g$ which provide period $T_1 = {p}^{m-1} - 1$, wherein the maximal period is marked as $T_0 \equiv {T}_{\max}$. In general, we can write $T_q = {p}^{m-q} - 1$.
 
-LFSR generator can have the input port, $a$. For that more general case we can rewrite LFSR loop
+LFSR generator can have the input port, $a$. For that more general case we can rewrite LFSR cycle
 $$\vec s = \left( v \vec g + D[\vec s, a, 1] \right) \mod p,$$
 $$v = {s}_{m-1}.$$
 
