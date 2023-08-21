@@ -36,7 +36,7 @@ Higher symbols of $\vec s$, i.e. $s_m$, ${s}_{m+1},...$ can be ignored.
 
 Here the delay operator $D[\vec v, 1]$ means $(v_0, v_1, v_2, ...) \rightarrow (0, v_0, v_1, v_2, ...)$ transformation for any vector $\vec v$.
 
-As a rule, LFSR is initialized by unit state $\vec s = (1, 0, 0, ... , 0)$. Having $m$ cycles, LFSR will be in the state $\vec s = \vec g$ exactly, which is the same as generator coefficients. So, we consider that LFSR is **saturated** at that moment. When we continue cycles, we will observe some different states, and at some moment the current state will be equal to the initial state $\vec a$. What cycles we done between two equal states will determine LFSR period $T$.
+As a rule, LFSR is initialized by unit state $\vec s = (1, 0, 0, ... , 0)$. Having $m$ cycles, LFSR will be in the state $\vec s = \vec g$ exactly, which is the same as generator coefficients. So, we consider that LFSR is **saturated** at that moment. When we continue cycles, we will observe some different states, and at some moment the current state will be equal to the initial state $\vec g$. What cycles we done between two equal states will determine LFSR period $T$.
 
 If a generator $\vec g$ provides maximal period $T = T_{max} = p^m - 1$, then LFSR evolutes all possible states $\vec s$ except zero-state, and it doesn't matter what the initial state has been set. For a period $T < {T}_{\max}$ the initial state has some influence, but most of initial states will provide the fix period which can be called as the "main period".
 
