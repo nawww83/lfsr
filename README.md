@@ -27,7 +27,7 @@ We can see that all numbers are different (except the last one), from $1$ to $10
 
 In the previous example, a unit length $p$-ary LFSR register is considered, $m=1$, but no one forbids considering a register of arbitrary length $m$. In this case, the maximum period is $T = {p}^{m} - 1$, and we should find suitable coefficients $\left( g_0, \ldots{}, g_{m-1} \right)$ so that the period is just that. These coefficients are the coefficients of the generator polynomial $g(x) = x^m - {g}_{m-1} {x}^{m-1} - \ldots{} - g_0$ of degree $m$.
 
-In general, we use $v$ as the last element of LFSR state $\vec s$, multiply generator vector $\vec g$ by the scalar $v$, and then add the product to the 1-delayed LFSR state (padded by zero). So we can express LFSR cycle in vector form
+The working cycle of LFSR generator is as follows. We use the scalar $v$, wich holds the value of the last cell in LFSR state $\vec s$. We multiply generator vector $\vec g$ by scalar $v$, and then add the 1-delayed LFSR state (padded by zero) to the product. So, we can express LFSR cycle in vector form
 $$\vec s = \left( v \vec g + D[\vec s, 1] \right) \mod p,$$
 $$v = {s}_{m-1}.$$
 
