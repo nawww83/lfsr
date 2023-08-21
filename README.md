@@ -3,7 +3,7 @@ LFSR and its cryptographic applications.
 
 Prime number $p$ and register length $m$ are used.
 
-You can calculate 32, 64 and 128-bit **cryptographic** hashes with **salt**. Also, you can add 256-bit hash etc using similar extention approach as you need.
+You can get 32, 64 and 128-bit **cryptographic** hashes with **salt**. Also, you can add 256-bit hash etc using similar extention approach as you need.
 Additionally, src code contains some functions to find vectors of coefficients $K$ that provide periods $T_0 = {p}^{m} - 1$ and $T_1 = {p}^{m-1} - 1$.
 
 ## Build
@@ -31,33 +31,33 @@ The working cycle of LFSR generator is as follows. We use the scalar $v$, wich h
 $$\vec s = \left( v \vec g + D[\vec s, 1] \right) \mod p,$$
 $$v = {s}_{m-1}.$$
 
-Higher symbols of $\vec s$, i.e. $s_m$, ${s}_{m+1},...$ can be ignored.
+The leading elements of the vector $\vec s$, i.e. $s_m$, ${s}_{m+1},...$ can be ignored.
 
-Here the delay operator $D[\vec v, 1]$ means $(v_0, v_1, v_2, ...) \rightarrow (0, v_0, v_1, v_2, ...)$ transformation for any vector $\vec v$.
+Here the delay operator $D[\vec v, 1]$ means $(v_0, v_1, v_2, ...) \rightarrow (0, v_0, v_1, v_2, ...)$ transformation for some vector $\vec v$.
 
 As a rule, LFSR is initialized by unit state $\vec s = (1, 0, 0, ... , 0)$. After $m$ cycles, LFSR will be in state $\vec s = \vec g$, which is equal to the generator coefficients. We consider that LFSR is **saturated** at that moment. When we continue cycles, we will observe different states, and at some point the current state will be equal to the initial one $\vec g$. The number of completed cycles will determine the period $T$ of the generator.
 
 If some generator $\vec g$ provides the maximum period $T = T_{max} = p^m - 1$, then LFSR goes through all states $\vec s$ except zero, and it doesn't matter what initial state was set. For periods $T < {T}_{\max}$, the initial state affects the period, however most initial states will provide a fixed period, which can be called the **main period**.
 
-It was numerically shown there are generators $\vec g$ which provide period $T_1 = {p}^{m-1} - 1$, wherein the maximal period is marked as $T_0 \equiv {T}_{\max}$. In general, we can write $T_q = {p}^{m-q} - 1$.
+It was numerically shown, there are generators $\vec g$ which provide period $T_1 = {p}^{m-1} - 1$, while the maximum period is marked as $T_0 \equiv {T}_{\max}$. In general, we can write $T_q = {p}^{m-q} - 1$.
 
-LFSR generator can have the input port, $a$. For that more general case we can rewrite LFSR cycle
+In general, LFSR generator has an input port, $a$. Then its work cycle will look like this:
 $$\vec s = \left( v \vec g + D[\vec s, a, 1] \right) \mod p,$$
 $$v = {s}_{m-1}.$$
 
 Here the delay operator $D[\vec v, a, 1]$ means $(v_0, v_1, v_2, ...) \rightarrow (a, v_0, v_1, v_2, ...)$ transformation for any vector $\vec v$ and scalar $a$.
 
-Note, all discussed LFSR periods have sense for zero input. That periods can be called as "free periods".
+Note that all the discussed LFSR periods make sense at zero input. These periods may be called **free periods**.
 
-If we have two LFSR generators, with periods $T_0$ and $T_1$ and common input, we can combine (mix) the final LFSR states into one state that can be interpreted as LFSR hash of the input. Two periods have Greatest Common Divisor $p-1$, so for zero input we will have the total period
+If we have two LFSR generators with periods $T_0$ and $T_1$ and a common input, then we can combine (mix) their final states into one, thereby forming the required LFSR hash of the input data. The Greatest Common Divisor of two periods is $p-1$. Thus, with a zero input, we get the total period
 $${{T_0 T_1} \over {p-1}} \approx p^{2m-2} \approx {T_1}^{2}.$$
 
-For states combination, the bit-wise XOR operator is chosen. We chose $m=4$ with $p=251$ and $p=241$.
+A bit-wise XOR is chosen to combine the states.
 
 Two generators ${\vec g}^{(0)}$ and ${\vec g}^{(1)}$ are packed into one SIMD 128-bit vector in C++ code for better SIMD registers usage. Such generator is called as **LFSR pair**. For better performance, the input is processed by 16-bit samples.
 
-We use two LFSR pairs, with $p=251$ and $p=241$. Final states of two pairs are XOR-ed as usual. So, the total free period of given LFSR hash is about ${251}^{6} \cdot {241}^{6} \approx 95$ bits, i.e. ${2}^{95} \approx {10}^{28}$.
+We use two LFSR pairs of length $m=4$, and primes $p=251$ and $p=241$. Final states of two pairs are XOR-ed as usual. So, the total free period of given LFSR hash is about ${251}^{6} \cdot {241}^{6} \approx 95$ bits, i.e. ${2}^{95} \approx {10}^{28}$.
 
-To improve the crypto resilience, the first LFSR pair is driven by the original input, but the second pair is driven by reversed input vector. Also, the salt is added before and after input loop. The minimal size of the input vector is $2$ elements.
+To improve the crypto resilience, the first LFSR pair is driven by the original input, but the second one is driven by reversed input vector. Also, the **salt** is added before/after input loop. The minimal size of the input vector is $2$ elements.
 
-Bit scaling of LFSR hash is done by salt adding.
+Bit scaling of LFSR hash is done by adding **salt**.
