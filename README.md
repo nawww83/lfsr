@@ -15,11 +15,11 @@ g++ main.cpp lfsr_hash.cpp -std=c++20 -msse4.1 -O3 -o lfsr
 Approx. 210 MB/s @ Intel i7-8565U CPU 4.2GHz, GCC 11.4
 
 ## LFSR hash principles
-Base unit for LFSR hash is LFSR register which can be interpreted as Finite State Machine (Moore machine if be more precise).
+The base unit for LFSR hash is a LFSR register, which can be interpreted as a Finite State Machine (Moore machine to be precise).
 
-Classicaly, LFSR operates with binary symbols, $0$ and $1$, but nobody forbid us to use any $M$-ary symbol - integer numbers from $0$ to $M-1$.
+Usually, LFSR operates on binary symbols, $0$ and $1$, but no one forbid us to use any $M$-ary symbols - integer from $0$ to $M-1$.
 
-Due to special mathematical property of prime numbers, it makes sense to use $M$ as a prime number: $2, 3, 5, 7, \ldots{}$ That property is the maximal period property when we calculate all integer powers by modulo $p$: ${g}^{i} \mod p, \quad i \in \mathbb{Z}$.
+Due to special mathematical property of prime numbers, it makes sense to use prime numbers as $M$: $2, 3, 5, 7, \ldots{}$. This property is the maximum period of a sequence of integer powers of some number $g$ by modulo $p$: ${g}^{i} \mod p, \quad i \in \mathbb{Z}$.
 
 For example, let's $p=11$, $g=2$, $i=0...10$, so we have the following powers $1, 2, 4, 8, 5, 10, 9, 7, 3, 6, 1$.
 
