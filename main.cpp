@@ -356,7 +356,7 @@ int main() {
 
 		cout << "Counter: " << c << ", skeep: " << skeep << ", ave dt: " << ave_dt*1e-9 << " s, rms dt: " << std::sqrt(ave_var_dt - ave_dt*ave_dt)*1e-9 <<
 			 ", max dt: " << max_dt*1e-9 << ", min dt: " << min_dt*1e-9 << endl;
-		cout << "First 16 random numbers: " << endl;
+		cout << "First 16 random numbers: ";
 		auto pretty_print = [&g](int n) {
 			for (int i=0; i<n; ++i) {
 				g.next();
@@ -365,6 +365,20 @@ int main() {
 			cout << endl;
 		};
 		pretty_print(16);
+		//
+		auto measure_time = [&g](int n) {
+			lfsr8::u32 h = 0;
+			timer.reset();
+			for (int i=0; i<n; ++i) {
+				g.next();
+				h ^= g.get_u32(); // 4 bytes = u32 value
+			}
+			double dt = timer.elapsed_ns();
+			cout << "Total hash: " << std::hex << h << std::dec;
+			cout << ", random generator performance: " << 4*1e+3*double(n)/dt << " MB/s" << endl;
+		};
+		measure_time(150000);
+		cout << endl;
 	}
 	//
 	

@@ -67,8 +67,8 @@ public:
             bool f3 = false;
             bool f4 = false;
             while (true) {
-                gp1.next((i1^i2), (i1+i2)); // Joint sawtooth modulation
-                gp2.next((i1+i2), (i1^i2)); // cross scheme to get random periods T0 < T < p*T0
+                gp1.next(i1^i2); // Joint sawtooth modulation
+                gp2.next(i1^i2); // cross scheme to get random periods T0 < T < p*T0
                 i1++; i1 %= q1;
                 i2++; i2 %= q2;
                 const auto t1 = gp1.get_state();
@@ -173,8 +173,8 @@ public:
         return is_finded;
     }
     void next() {
-        gp1.next((ii1^ii2), (ii1+ii2)); // must: the same operator as in the seed()
-        gp2.next((ii1+ii2), (ii1^ii2));
+        gp1.next(ii1^ii2); // must: the same operator as in the seed()
+        gp2.next(ii1^ii2);
         ii1++; ii1 %= qq1;
         ii2++; ii2 %= qq2;
     }

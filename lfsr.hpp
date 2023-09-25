@@ -257,7 +257,7 @@ public:
 			__m128i inp = _mm_andnot_si128( mask1, _mm_set1_epi16(inp1) );
 			inp = _mm_or_si128( inp, _mm_andnot_si128( mask2, _mm_set1_epi16(inp2) ) );
 
-			const __m128i mask = _mm_set_epi16(-1, -1, -1, 0, -1, -1, -1, 0);
+			const __m128i mask = _mm_and_si128(mask1, mask2); // _mm_set_epi16(-1, -1, -1, 0, -1, -1, -1, 0);
 			__m128i d = _mm_load_si128((const __m128i*)&m_state[0]);
 			d = _mm_and_si128(mask, _mm_slli_si128(d, 2));
 			d = _mm_add_epi16(c, d);
