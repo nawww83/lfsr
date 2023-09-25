@@ -3,13 +3,15 @@
 #include <cmath>
 #include <cstring>
 #include <set>
+#include <limits>
 
 #include "lfsr_hash.hpp"
+#include "random_gen.hpp"
 
 #include "timer.hpp"
 
 
-constexpr int p = 131;
+constexpr int p = 23;
 constexpr int m = 4;
 
 using LFSR = lfsr8::LFSR<p, m>;
@@ -74,6 +76,28 @@ auto get_random_coeffs(Generator& g) {
 			st[i] = g() % p;
 		}
 		if (st[0] != 0) {
+			break;
+		}
+	}
+	return st;
+}
+
+template<class Generator>
+auto get_random_u32x4(Generator& g) {
+	lfsr8::u32x4 st {};
+	while (1) {
+		lfsr8::u64 sum = 0;
+		for (int i=0; i<m; ++i) {
+			st[i] = g() & 255;
+			st[i] <<= 8;
+ 			st[i] |= g() & 255;
+			st[i] <<= 8;
+ 			st[i] |= g() & 255;
+			st[i] <<= 8;
+ 			st[i] |= g() & 255;
+			sum += st[i];
+		}
+		if (sum != 0) {
 			break;
 		}
 	}
@@ -199,7 +223,7 @@ int main() {
 	using namespace std;
 	
 	static_assert(is_prime<p>());
-	
+	/*
 	cout << "LFSR with modulo p: " << p << ", length m: " << m << endl;
 	{
 		cout << "Wait for maximal period T0 = p^m - 1 polynomial look up..." << endl;
@@ -215,8 +239,9 @@ int main() {
 		auto T_str = format_with_commas(T);
 		cout << " Period T0: " << T_str << endl;
 	}
+	*/
 	//
-	
+	/*
 	{
 		long long T;
 		cout << "Wait for period T1 = p^(m-1) - 1 polynomial look up..." << endl;
@@ -231,16 +256,17 @@ int main() {
 		auto T_str = format_with_commas(T);
 		cout << " Period T1: " << T_str << endl;
 	}
-	
+	*/
 	//
 	//
-	
+	/*
 	{
 		cout << "Wait for Next-Back test..." << endl;
 		test_next_back();
 		cout << " Completed." << endl;
 	}
-	
+	*/
+	/*
 	//
 	{
 		const int N = 65536*16;
@@ -285,6 +311,62 @@ int main() {
 
 		cout << "LFSR 128-bit hash: " << std::hex << hash128.first << ":" << hash128.second << std::dec << ", perf: " << perf4 << " MB/s." << endl;
 	}
+	*/
+	// Random generator test	
+	lfsr_rng::gens g;
+	GeometricDistribution<int> r(0.3);
 
+	auto state_conversion = [](lfsr8::u32x4 st) {
+		lfsr8::u16x8 st1;
+		st1[0] = st[0];
+		st1[1] = st[0] >> 16;
+		st1[2] = st[1];
+		st1[3] = st[1] >> 16;
+
+		st1[4] = st[2];
+		st1[5] = st[2] >> 16;
+		st1[6] = st[3];
+		st1[7] = st[3] >> 16;
+
+		return st1;
+	};
+
+	int c = 0;
+	int skeep = 0;
+	double ave_dt = 0.;
+	double ave_var_dt = 0.;
+	double min_dt = std::numeric_limits<double>::infinity();
+	double max_dt = 0.;
+	while (1) {
+		c++;
+		STATE st = get_random_u32x4(r);
+		auto st_c = state_conversion(st);
+		timer.reset();
+		auto is_good = g.seed(st_c); // it needs to be controlled
+		double dt = timer.elapsed_ns();
+		ave_dt += (dt - ave_dt) / (1.*c);
+		ave_var_dt += (dt*dt - ave_var_dt) / (1.*c);
+		min_dt = std::min(min_dt, dt);
+		max_dt = std::max(max_dt, dt);
+		//
+		if (!is_good) { // if not good, we must change initial state (seed), for ex., increment it etc
+			skeep++; // it is better to get zero skeeps
+			continue;
+		}
+
+		cout << "Counter: " << c << ", skeep: " << skeep << ", ave dt: " << ave_dt*1e-9 << " s, rms dt: " << std::sqrt(ave_var_dt - ave_dt*ave_dt)*1e-9 <<
+			 ", max dt: " << max_dt*1e-9 << ", min dt: " << min_dt*1e-9 << endl;
+		cout << "First 16 random numbers: " << endl;
+		auto pretty_print = [&g](int n) {
+			for (int i=0; i<n; ++i) {
+				g.next();
+				cout << std::hex << g.get_u32() << std::dec << ((i < (n-1)) ? ", " : "");
+			}
+			cout << endl;
+		};
+		pretty_print(16);
+	}
+	//
+	
     return 0;
 }

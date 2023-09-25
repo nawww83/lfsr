@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 #include <cassert>
 #include <array>
@@ -237,6 +239,42 @@ public:
 			}
 			m_state[0] = (input + m_v3*m_K[0]) % p;
 			m_state[4] = (input + m_v7*m_K[4]) % p;
+			// m_v3 = m_state[3];
+			// m_v7 = m_state[7];
+		#endif
+	}
+	void next(u16 inp1, u16 inp2) {		
+		#ifdef USE_SSE
+			__m128i a = _mm_set1_epi16(m_state[3]);
+			__m128i b = _mm_set1_epi16(m_state[3] ^ m_state[7]);
+			b = _mm_slli_si128(b, 8);
+			a = _mm_xor_si128(a, b);
+			b = _mm_load_si128((const __m128i*)&m_K[0]);
+			__m128i c = _mm_mullo_epi16(a, b);
+			
+			const __m128i mask1 = _mm_set_epi16(-1, -1, -1, -1, -1, -1, -1, 0);
+			const __m128i mask2 = _mm_set_epi16(-1, -1, -1, 0, -1, -1, -1, -1);
+			__m128i inp = _mm_andnot_si128( mask1, _mm_set1_epi16(inp1) );
+			inp = _mm_or_si128( inp, _mm_andnot_si128( mask2, _mm_set1_epi16(inp2) ) );
+
+			const __m128i mask = _mm_set_epi16(-1, -1, -1, 0, -1, -1, -1, 0);
+			__m128i d = _mm_load_si128((const __m128i*)&m_state[0]);
+			d = _mm_and_si128(mask, _mm_slli_si128(d, 2));
+			d = _mm_add_epi16(c, d);
+			d = _mm_add_epi16(inp, d);
+			_mm_store_si128((__m128i*)&m_state[0], d);
+			for (int i=0; i<8; ++i) {
+				m_state[i] %= p;
+			}
+		#else
+			u16 m_v3 = m_state[3];
+			u16 m_v7 = m_state[7]; 
+			for (int i=7; i>4; i--) {
+				m_state[i] = (m_state[i-1] + m_v7*m_K[i]) % p;
+				m_state[i-4] = (m_state[i-1-4] + m_v3*m_K[i-4]) % p;
+			}
+			m_state[0] = (inp1 + m_v3*m_K[0]) % p;
+			m_state[4] = (inp2 + m_v7*m_K[4]) % p;
 			// m_v3 = m_state[3];
 			// m_v7 = m_state[7];
 		#endif
