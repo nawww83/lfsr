@@ -1,7 +1,7 @@
 #include "lfsr_hash.hpp"
 
 
-lfsr_hash::gens g;
+static lfsr_hash::gens g;
 
 // lfsr_hash::u16 lfsr_hash::hash16(const uint8_t* input, int n) {
 //     g.reset();

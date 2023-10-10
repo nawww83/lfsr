@@ -3,6 +3,7 @@
 #include "lfsr.hpp"
 
 #include <utility>
+#include <thread>
 
 
 namespace lfsr_hash {
@@ -56,10 +57,26 @@ public:
     }
     void process_input(const uint8_t* input, int n) {
         assert(n > 1);
-        for (int i=0; i<n/2; ++i) {
-            g_251x4.next(*(u16*)(input + 2*i));
-            g_241x4.next(*(u16*)(input + n - 2 - 2*i));
-        }
+        auto f = [this](const uint8_t* ptr, int len, int type) {
+            if (type == 0) {
+                for (int i=0; i<len/2; ++i) {
+                    g_251x4.next(*(u16*)(ptr + 2*i));
+                    // g_241x4.next(*(u16*)(ptr + len - 2 - 2*i));
+                }
+            }
+            if (type == 1) {
+                for (int i=0; i<len/2; ++i) {
+                    // g_251x4.next(*(u16*)(ptr + 2*i));
+                    g_241x4.next(*(u16*)(ptr + len - 2 - 2*i));
+                }
+            }
+        };
+        
+        std::thread th1(f, input, n, 0);
+        std::thread th2(f, input, n, 1);
+
+        th1.join();
+        th2.join();
     }
     // auto form_hash16() {
     //     auto st1 = g_251x4.get_state();

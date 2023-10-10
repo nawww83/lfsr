@@ -266,10 +266,10 @@ int main() {
 		cout << " Completed." << endl;
 	}
 	*/
-	/*
+	
 	//
 	{
-		const int N = 65536*16;
+		const int N = 65536*16*16;
 		auto v = new uint8_t[N];
 		assert(v != nullptr);
 		cout << "Input array of " << N << " bytes is allocated." << endl;
@@ -290,29 +290,32 @@ int main() {
 		double perf4 = (1.e3*N)/dt4;
 
 		// small input influence test
-		v[0] += 1;
-		auto hash64_0p = lfsr_hash::hash64(v, N);
-		v[0] -= 1;
-		v[N-1] += 1;
-		auto hash64_1p = lfsr_hash::hash64(v, N);
-		v[N-1] -= 1;
-		v[N/2] += 1;
-		auto hash64_hp = lfsr_hash::hash64(v, N);
-		v[N/2] -= 1;
+		// v[0] += 1;
+		// auto hash64_0p = lfsr_hash::hash64(v, N);
+		// v[0] -= 1;
+		// v[N-1] += 1;
+		// auto hash64_1p = lfsr_hash::hash64(v, N);
+		// v[N-1] -= 1;
+		// v[N/2] += 1;
+		// auto hash64_hp = lfsr_hash::hash64(v, N);
+		// v[N/2] -= 1;
 		//
 
 		delete [] v;
-		cout << "LFSR 32-bit hash: " << std::hex << hash32 << std::dec << ", perf: " << perf2 << " MB/s." << endl;
-		cout << "LFSR 64-bit hash: " << std::hex << hash64 << std::dec << ", perf: " << perf3 << " MB/s." << endl;
+		//
+		cout << "LFSR hashes:" << endl;
+		cout << " 32-bit hash:  " << std::hex << hash32 << std::dec << "\t\t\t\t\t\tperf: " << perf2 << " MB/s" << endl;
+		cout << " 64-bit hash:  " << std::hex << hash64 << std::dec << "\t\t\t\t\tperf: " << perf3 << " MB/s" << endl;
 
-		cout << "LFSR 64-bit hash 0p: " << std::hex << hash64_0p << std::dec << endl;
-		cout << "LFSR 64-bit hash 1p: " << std::hex << hash64_1p << std::dec << endl;
-		cout << "LFSR 64-bit hash hp: " << std::hex << hash64_hp << std::dec << endl;
+		// cout << "LFSR 64-bit hash 0p: " << std::hex << hash64_0p << std::dec << endl;
+		// cout << "LFSR 64-bit hash 1p: " << std::hex << hash64_1p << std::dec << endl;
+		// cout << "LFSR 64-bit hash hp: " << std::hex << hash64_hp << std::dec << endl;
 
-		cout << "LFSR 128-bit hash: " << std::hex << hash128.first << ":" << hash128.second << std::dec << ", perf: " << perf4 << " MB/s." << endl;
+		cout << " 128-bit hash: " << std::hex << hash128.first << ":" << hash128.second << std::dec << "\t\tperf: " << perf4 << " MB/s" << endl;
 	}
-	*/
+	
 	// Random generator test	
+	/*
 	lfsr_rng::gens g;
 	GeometricDistribution<int> r(0.3);
 
@@ -380,7 +383,6 @@ int main() {
 		measure_time(150000);
 		cout << endl;
 	}
-	//
-	
+	*/
     return 0;
 }
