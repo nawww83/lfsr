@@ -3,7 +3,6 @@
 #include "lfsr.hpp"
 
 #include <utility>
-#include <thread>
 
 
 namespace lfsr_hash {
@@ -57,35 +56,12 @@ public:
     }
     void process_input(const uint8_t* input, int n) {
         assert(n > 1);
-        auto f = [this](const uint8_t* ptr, int len, int type) {
-            if (type == 0) {
-                for (int i=0; i<len/2; ++i) {
-                    g_251x4.next(*(u16*)(ptr + 2*i));
-                    // g_241x4.next(*(u16*)(ptr + len - 2 - 2*i));
-                }
-            }
-            if (type == 1) {
-                for (int i=0; i<len/2; ++i) {
-                    // g_251x4.next(*(u16*)(ptr + 2*i));
-                    g_241x4.next(*(u16*)(ptr + len - 2 - 2*i));
-                }
-            }
-        };
-        
-        std::thread th1(f, input, n, 0);
-        std::thread th2(f, input, n, 1);
-
-        th1.join();
-        th2.join();
+        for (int i=0; i<n/2; ++i) {
+            g_251x4.next(*(u16*)(input + 2*i));
+            g_241x4.next(*(u16*)(input + n - 2 - 2*i));
+        }
     }
-    // auto form_hash16() {
-    //     auto st1 = g_251x4.get_state();
-    //     auto st2 = g_241x4.get_state();
-    //     lfsr8::u16 hash = (st1[0] ^ st1[4] ^ st2[0] ^ st2[4]) ^ (st1[2] ^ st1[6] ^ st2[2] ^ st2[6]);
-    //     hash <<= 8;
-    //     hash |= (st1[1] ^ st1[5] ^ st2[1] ^ st2[5]) ^ (st1[3] ^ st1[7] ^ st2[3] ^ st2[7]);
-    //     return hash;
-    // }
+
     auto form_hash32() {
         auto st1 = g_251x4.get_state();
         auto st2 = g_241x4.get_state();
@@ -102,7 +78,6 @@ public:
     }
 };
 
-// u16 hash16(const uint8_t* input, int n);
 u32 hash32(const uint8_t* input, int n);
 u64 hash64(const uint8_t* input, int n);
 u128 hash128(const uint8_t* input, int n);

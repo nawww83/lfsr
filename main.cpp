@@ -11,7 +11,7 @@
 #include "timer.hpp"
 
 
-constexpr int p = 23;
+constexpr int p = 251;
 constexpr int m = 4;
 
 using LFSR = lfsr8::LFSR<p, m>;
@@ -41,14 +41,17 @@ std::string format_with_commas(T x) {
 	return s;
 }
 
+static std::random_device rd;
+
+
 template <typename T>
 class GeometricDistribution {
 private:
-    std::random_device rd;
     std::mt19937 gen;
     std::geometric_distribution<T> dist;
 public:
     GeometricDistribution(double p): gen(rd()), dist(p) {}
+	GeometricDistribution(GeometricDistribution&& other) noexcept: dist(std::move(other.dist)), gen(std::move(other.gen)) {}
     T operator()() { return dist(gen); }
 };
 
@@ -290,15 +293,9 @@ int main() {
 		double perf4 = (1.e3*N)/dt4;
 
 		// small input influence test
-		// v[0] += 1;
-		// auto hash64_0p = lfsr_hash::hash64(v, N);
-		// v[0] -= 1;
-		// v[N-1] += 1;
-		// auto hash64_1p = lfsr_hash::hash64(v, N);
-		// v[N-1] -= 1;
-		// v[N/2] += 1;
-		// auto hash64_hp = lfsr_hash::hash64(v, N);
-		// v[N/2] -= 1;
+		auto hash64_1 = lfsr_hash::hash64(v, N-1);
+		auto hash64_2 = lfsr_hash::hash64(v, N-2);
+		auto hash64_3 = lfsr_hash::hash64(v, N-3);
 		//
 
 		delete [] v;
@@ -307,9 +304,9 @@ int main() {
 		cout << " 32-bit hash:  " << std::hex << hash32 << std::dec << "\t\t\t\t\t\tperf: " << perf2 << " MB/s" << endl;
 		cout << " 64-bit hash:  " << std::hex << hash64 << std::dec << "\t\t\t\t\tperf: " << perf3 << " MB/s" << endl;
 
-		// cout << "LFSR 64-bit hash 0p: " << std::hex << hash64_0p << std::dec << endl;
-		// cout << "LFSR 64-bit hash 1p: " << std::hex << hash64_1p << std::dec << endl;
-		// cout << "LFSR 64-bit hash hp: " << std::hex << hash64_hp << std::dec << endl;
+		cout << "LFSR 64-bit hash 1: " << std::hex << hash64_1 << std::dec << endl;
+		cout << "LFSR 64-bit hash 2: " << std::hex << hash64_2 << std::dec << endl;
+		cout << "LFSR 64-bit hash 3: " << std::hex << hash64_3 << std::dec << endl;
 
 		cout << " 128-bit hash: " << std::hex << hash128.first << ":" << hash128.second << std::dec << "\t\tperf: " << perf4 << " MB/s" << endl;
 	}
