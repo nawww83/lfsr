@@ -30,7 +30,10 @@ static constexpr STATE K2 = {3, 1, 4, 0, 3, 6, 10, 7};    // p=23:   T0 = p^4 - 
 
 // static constexpr STATE K = {3, 2, 2, 0, 7, 3, 3, 2};    // p=251:   T0 = p^4 - 1
 
-static const std::list<lfsr8::u16> primes {7, 11, 13, 17};
+class MyPrimes {
+public:
+    static const std::list<lfsr8::u16> primes() {return {7, 11, 13, 17};}
+};
 
 struct gens {
     LFSR_pair gp1;
@@ -39,14 +42,30 @@ struct gens {
     lfsr8::u16 ii2; // --//-- 2
     lfsr8::u16 qq1; // Sawtooth period 1
     lfsr8::u16 qq2; // Sawtooth period 2
+    bool is_finded;
 public:
-    constexpr gens(): gp1(K1), gp2(K2) {}
-    bool seed(STATE st) {
+    constexpr gens(): gp1(K1), gp2(K2), ii1(0), ii2(0), qq1(0), qq2(0), is_finded(false) {}
+    bool is_succes() const {
+        return is_finded;
+    }
+    auto get_ii1() const {
+        return ii1;
+    }
+    auto get_ii2() const {
+        return ii2;
+    }
+    auto get_qq1() const {
+        return qq1;
+    }
+    auto get_qq2() const {
+        return qq2;
+    }
+    void seed(STATE st) {
         gp1.set_state(st);
         gp2.set_state(st);
         for (int i=0; i<12; ++i) {
-            gp1.next();
-            gp2.next();
+            gp1.next(5);
+            gp2.next(13);
         }
         const auto ref1 = gp1.get_state();
         const auto ref2 = gp2.get_state();
@@ -111,9 +130,9 @@ public:
         };
         const long long T0 = std::pow(p, 4) - 1;
         // std::cout << " T0 " << T0 << std::endl;
-        bool is_finded = false;
-        for (auto qT1 : primes) {
-            for (auto qT2 : primes) {
+        is_finded = false;
+        for (auto qT1 : MyPrimes::primes()) {
+            for (auto qT2 : MyPrimes::primes()) {
                 if (qT1 == qT2) {
                     continue;
                 }
@@ -134,14 +153,12 @@ public:
                         const auto gcd = std::gcd(gcd1, gcd2);
                         is_finded = ((T > 0) && (gcd < 3) && (T1 > T0) && (T2 > T0) && (T3 > T0) && (T4 > T0));
                         if (is_finded) {
-                            idx2 = i2;
                             ii2 = i2;
                             qq2 = qT2;
                             break;
                         }
                     }
                     if (is_finded) {
-                        idx1 = i1;
                         ii1 = i1;
                         qq1 = qT1;
                         break;
@@ -170,7 +187,6 @@ public:
         // }
         gp1.set_state(ref1); // must: restore initial states
         gp2.set_state(ref2);
-        return is_finded;
     }
     void next() {
         gp1.next(ii1^ii2); // must: the same operator as in the seed()

@@ -66,7 +66,7 @@ static simd_printer sp;
 #endif
 
 
-template <int m, typename T = MType<m>::STATE>
+template <int m, typename T = typename MType<m>::STATE>
 static auto is_zero(T st) {
 	bool zf = true;
 	for (int i=0; i<m; ++i) {
@@ -77,8 +77,8 @@ static auto is_zero(T st) {
 
 template <int p, int m>
 class LFSR {
-	using STATE = MType<m>::STATE;
-	using SAMPLE = MType<m>::SAMPLE;
+	using STATE = typename MType<m>::STATE;
+	using SAMPLE = typename MType<m>::SAMPLE;
 public:
 	constexpr LFSR(STATE K): m_K(K) {
 		static_assert(m <= 8);

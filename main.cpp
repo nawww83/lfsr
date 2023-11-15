@@ -312,7 +312,7 @@ int main() {
 	}
 	
 	// Random generator test	
-	/*
+	
 	lfsr_rng::gens g;
 	GeometricDistribution<int> r(0.3);
 
@@ -342,14 +342,14 @@ int main() {
 		STATE st = get_random_u32x4(r);
 		auto st_c = state_conversion(st);
 		timer.reset();
-		auto is_good = g.seed(st_c); // it needs to be controlled
+		g.seed(st_c);
 		double dt = timer.elapsed_ns();
 		ave_dt += (dt - ave_dt) / (1.*c);
 		ave_var_dt += (dt*dt - ave_var_dt) / (1.*c);
 		min_dt = std::min(min_dt, dt);
 		max_dt = std::max(max_dt, dt);
 		//
-		if (!is_good) { // if not good, we must change initial state (seed), for ex., increment it etc
+		if (! g.is_succes()) { // if not good, we must change initial state (seed), for ex., increment it etc
 			skeep++; // it is better to get zero skeeps
 			continue;
 		}
@@ -380,6 +380,6 @@ int main() {
 		measure_time(150000);
 		cout << endl;
 	}
-	*/
+	
     return 0;
 }
