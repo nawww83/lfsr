@@ -282,6 +282,20 @@ public:
 	auto get_state() const {
 		return m_state;
 	}
+	bool is_state_low(u16x8 st) const {
+        bool res = true;
+        for (int i=0; i<4; ++i) {
+            res &= (m_state[i] == st[i]);
+        }
+        return res;
+    }
+    bool is_state_high(u16x8 st) const {
+        bool res = true;
+        for (int i=0; i<4; ++i) {
+            res &= (m_state[i+4] == st[i+4]);
+        }
+        return res;
+    }
 private:
 	u16x8 m_state {};
 	u16x8 m_K {};
