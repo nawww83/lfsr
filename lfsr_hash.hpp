@@ -55,24 +55,30 @@ public:
         }
     }
     void process_input(const uint8_t* input, int n) {
-        assert(n > 1);
-        for (int i=0; i<n/2; ++i) {
-            g_251x4.next(*(u16*)(input + 2*i));
-            g_241x4.next(*(u16*)(input + n - 2 - 2*i));
+        assert(n > 0);
+        if (n > 1) {
+            for (int i=0; i<n/2; ++i) {
+                g_251x4.next(*(u16*)(input + 2*i));
+                g_241x4.next(*(u16*)(input + n - 2 - 2*i));
+            }
         }
+        u16 x = (u16)input[0] | ((u16)(~input[0]) << 8);
+        u16 y = (u16)input[0] << 8 | (u16)(~input[0]);
+        g_251x4.next(x);
+        g_241x4.next(y);
     }
 
     auto form_hash32() {
         auto st1 = g_251x4.get_state();
         auto st2 = g_241x4.get_state();
         lfsr8::u32 hash;
-        hash  = (st1[0] ^ st1[4] ^ st2[0] ^ st2[4]);
+        hash  = ((st1[0] ^ st1[4])) ^ ((st2[0] ^ st2[4]));
         hash <<= 8;
-        hash |= (st1[1] ^ st1[5] ^ st2[1] ^ st2[5]);
+        hash |= ((st1[1] ^ st1[5])) ^ ((st2[1] ^ st2[5]));
         hash <<= 8;
-        hash |= (st1[2] ^ st1[6] ^ st2[2] ^ st2[6]);
+        hash |= ((st1[2] ^ st1[6])) ^ ((st2[2] ^ st2[6]));
         hash <<= 8;
-        hash |= (st1[3] ^ st1[7] ^ st2[3] ^ st2[7]);
+        hash |= ((st1[3] ^ st1[7])) ^ ((st2[3] ^ st2[7]));
         
         return hash;
     }
