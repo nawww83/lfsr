@@ -62,7 +62,7 @@ struct simd_printer {
 	}
 };
 
-static simd_printer sp;
+// static simd_printer sp;
 #endif
 
 

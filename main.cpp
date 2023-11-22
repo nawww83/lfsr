@@ -5,7 +5,7 @@
 #include <set>
 #include <map>
 #include <limits>
-#include <memory>
+#include <vector>
 
 #include "lfsr_hash.hpp"
 #include "random_gen.hpp"
@@ -275,34 +275,31 @@ int main() {
 	//
 	{
 		const int N = 65536*16*16;
-		auto v_ = std::make_unique<uint8_t[]>(N);
-		auto v = v_.get();
-		assert(v != nullptr);
+		auto v = std::vector<uint8_t>(N);
 		cout << "Input array of " << N << " bytes is allocated." << endl;
 		
 		timer.reset();
-		auto hash32 = lfsr_hash::hash32(v, N);
+		auto hash32 = lfsr_hash::hash32(v.data(), N);
 		auto dt2 = timer.elapsed_ns();
 		double perf2 = (1.e3*N)/dt2;
 
 		timer.reset();
-		auto hash64 = lfsr_hash::hash64(v, N);
+		auto hash64 = lfsr_hash::hash64(v.data(), N);
 		auto dt3 = timer.elapsed_ns();
 		double perf3 = (1.e3*N)/dt3;
 
 		timer.reset();
-		auto hash128 = lfsr_hash::hash128(v, N);
+		auto hash128 = lfsr_hash::hash128(v.data(), N);
 		auto dt4 = timer.elapsed_ns();
 		double perf4 = (1.e3*N)/dt4;
-
 		//
 		cout << "LFSR hashes:" << endl;
 		cout << " 32-bit hash:  " << std::hex << hash32 << std::dec << "\t\t\t\t\t\tperf: " << perf2 << " MB/s" << endl;
 		cout << " 64-bit hash:  " << std::hex << hash64 << std::dec << "\t\t\t\t\tperf: " << perf3 << " MB/s" << endl;
-
 		cout << " 128-bit hash: " << std::hex << hash128.first << ":" << hash128.second << std::dec << "\t\tperf: " << perf4 << " MB/s" << endl;
-
-		std::map<lfsr8::u64, int> hashes;
+	}
+	{
+		std::map<lfsr8::u32, int> hashes;
 		for (int i=0; i<256; i++) {
 			const uint8_t x = i;
 			hashes[lfsr_hash::hash32(&x, 1)] = i;
@@ -315,14 +312,26 @@ int main() {
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256u + 65536u));
-		// uint8_t x[3];
-		// for (int i=0; i<256*256*256; i++) {
-		// 	x[0] = i;
-		// 	x[1] = i >> 8;
-		// 	x[2] = i >> 16;
-		// 	hashes[lfsr_hash::hash32(x, 3)] = i;
-		// }
-		// cout << hashes.size() << endl;
+	}
+	{
+		cout << "Wait test..." << endl;
+		const long N = 1024*8;
+		std::vector<uint8_t> v(N);
+		std::map<lfsr8::u32, int> hashes;
+		long s = 0;
+		for (int val=0; val<256; val++) {
+			hashes.clear();
+			v.assign(N, (uint8_t)val);
+			assert(v.size() == N);
+			for (int i=1; i<=N; i++) {
+				hashes[lfsr_hash::hash32(v.data(), i)] = i;
+			}
+			// cout << hashes.size() << endl;
+			// assert(hashes.size() > N - 2);
+			s += hashes.size();
+		}
+		assert((N*256 - s) == 0);
+		cout << " => Passed." << endl;
 	}
 	
 	// Random generator test	

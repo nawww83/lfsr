@@ -62,10 +62,9 @@ public:
                 g_241x4.next(*(u16*)(input + n - 2 - 2*i));
             }
         }
-        u16 x = (u16)input[0] | ((u16)(~input[0]) << 8);
-        u16 y = (u16)input[0] << 8 | (u16)(~input[0]);
+        u16 x = (u16)input[0] | ((u16)(input[0]) << 8);
         g_251x4.next(x);
-        g_241x4.next(y);
+        g_241x4.next(x);
     }
 
     auto form_hash32() {
