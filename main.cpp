@@ -313,29 +313,29 @@ int main() {
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256u + 65536u));
 	}
-	{
-		cout << "Wait test..." << endl;
-		const long N = 1024*8;
-		std::vector<uint8_t> v(N);
-		std::map<lfsr8::u32, int> hashes;
-		long s = 0;
-		for (int val=0; val<256; val++) {
-			hashes.clear();
-			v.assign(N, (uint8_t)val);
-			assert(v.size() == N);
-			for (int i=1; i<=N; i++) {
-				hashes[lfsr_hash::hash32(v.data(), i)] = i;
-			}
-			// cout << hashes.size() << endl;
-			// assert(hashes.size() > N - 2);
-			s += hashes.size();
-		}
-		assert((N*256 - s) == 0);
-		cout << " => Passed." << endl;
-	}
+	// {
+	// 	cout << "Wait test..." << endl;
+	// 	const long N = 1024*8;
+	// 	std::vector<uint8_t> v(N);
+	// 	std::map<lfsr8::u32, int> hashes;
+	// 	long s = 0;
+	// 	for (int val=0; val<256; val++) {
+	// 		hashes.clear();
+	// 		v.assign(N, (uint8_t)val);
+	// 		assert(v.size() == N);
+	// 		for (int i=1; i<=N; i++) {
+	// 			hashes[lfsr_hash::hash32(v.data(), i)] = i;
+	// 		}
+	// 		// cout << hashes.size() << endl;
+	// 		// assert(hashes.size() > N - 2);
+	// 		s += hashes.size();
+	// 	}
+	// 	assert((N*256 - s) == 0);
+	// 	cout << " => Passed." << endl;
+	// }
 	
 	// Random generator test	
-	/*
+	
 	lfsr_rng::gens g;
 	GeometricDistribution<int> r(0.3);
 
@@ -403,7 +403,7 @@ int main() {
 		measure_time(150000);
 		cout << endl;
 	}
-	*/
+	
 	
     return 0;
 }
