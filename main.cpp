@@ -400,7 +400,7 @@ int main() {
 			cout << "Total hash: " << std::hex << h << std::dec;
 			cout << ", random generator performance: " << 4*1e+3*double(n)/dt << " MB/s" << endl;
 		};
-		measure_time(150000);
+		measure_time(10000000);
 		cout << endl;
 	}
 	
