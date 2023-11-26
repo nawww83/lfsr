@@ -72,18 +72,10 @@ public:
                 gp2.next(i2); //  to get random periods T0 < T < q*T0
                 i1++; i1 %= q;
                 i2++; i2 %= q;
-                if (gp1.is_state_low(ref1)) {
-                    T[4] = T[0];
-                }
-                if (gp1.is_state_high(ref1)) {
-                    T[5] = T[1];
-                }
-                if (gp2.is_state_low(ref2)) {
-                    T[6] = T[2];
-                }
-                if (gp2.is_state_high(ref2)) {
-                    T[7] = T[3];
-                }
+                T[4] = (! gp1.is_state_low(ref1)) ? T[4] : T[0];
+                T[5] = (! gp1.is_state_high(ref1)) ? T[5] : T[1];
+                T[6] = (! gp2.is_state_low(ref2)) ? T[6] : T[2];
+                T[7] = (! gp2.is_state_high(ref2)) ? T[7] : T[3];
                 T[0]++; T[1]++; T[2]++; T[3]++;
                 if (T[0] < q*T0) {
                     continue;
@@ -144,7 +136,10 @@ public:
         T[3] = (T[3] != T[7]) ? T[3] : 0;
         T[0]++; T[1]++; T[2]++; T[3]++;
     }
-    auto get_u32() const {
+    lfsr8::u32 get_u32() const {
+        return get_u32_and_or();
+    }
+    lfsr8::u32 get_u32_xor() const {
         auto st1 = gp1.get_state();
         auto st2 = gp2.get_state();
         lfsr8::u32 hash1; // form low 4 bits in byte: p=23: 5 bits => shift right by 1 bits to keep 4 bits
@@ -166,6 +161,128 @@ public:
         hash2 |= (((st2[3] ^ st1[7]) % p) << 4) & 255;
 
         return hash1 ^ hash2;
+    }
+    lfsr8::u32 get_u32_and_or() const { // more secure than XOR
+        auto st1 = gp1.get_state();
+        auto st2 = gp2.get_state();
+        lfsr8::u32 hash1;
+        hash1  = (((st1[0] & st2[4]) % p) >> 1) & 255;
+        hash1 <<= 8;
+        hash1 |= (((st1[1] & st2[5]) % p) >> 1) & 255;
+        hash1 <<= 8;
+        hash1 |= (((st1[2] & st2[6]) % p) >> 1) & 255;
+        hash1 <<= 8;
+        hash1 |= (((st1[3] & st2[7]) % p) >> 1) & 255;
+
+        lfsr8::u32 hash2;
+        hash2  = (((st2[0] | st1[4]) % p) << 4) & 255;
+        hash2 <<= 8;
+        hash2 |= (((st2[1] | st1[5]) % p) << 4) & 255;
+        hash2 <<= 8;
+        hash2 |= (((st2[2] | st1[6]) % p) << 4) & 255;
+        hash2 <<= 8;
+        hash2 |= (((st2[3] | st1[7]) % p) << 4) & 255;
+
+        lfsr8::u32 hash3;
+        hash3  = (((st1[0] | st1[4]) % p) >> 1) & 255;
+        hash3 <<= 8;
+        hash3 |= (((st1[1] | st1[5]) % p) >> 1) & 255;
+        hash3 <<= 8;
+        hash3 |= (((st1[2] | st1[6]) % p) >> 1) & 255;
+        hash3 <<= 8;
+        hash3 |= (((st1[3] | st1[7]) % p) >> 1) & 255;
+
+        lfsr8::u32 hash4;
+        hash4  = (((st2[0] & st2[4]) % p) << 4) & 255;
+        hash4 <<= 8;
+        hash4 |= (((st2[1] & st2[5]) % p) << 4) & 255;
+        hash4 <<= 8;
+        hash4 |= (((st2[2] & st2[6]) % p) << 4) & 255;
+        hash4 <<= 8;
+        hash4 |= (((st2[3] & st2[7]) % p) << 4) & 255;
+
+        return hash1 ^ hash2 ^ hash3 ^ hash4;
+    }
+     lfsr8::u64 get_u64() const { //
+        auto st1 = gp1.get_state();
+        auto st2 = gp2.get_state();
+        lfsr8::u32 hash1;
+        hash1  = (((st1[0] & st2[4]) % p) >> 1) & 255;
+        hash1 <<= 8;
+        hash1 |= (((st1[1] & st2[5]) % p) >> 1) & 255;
+        hash1 <<= 8;
+        hash1 |= (((st1[2] & st2[6]) % p) >> 1) & 255;
+        hash1 <<= 8;
+        hash1 |= (((st1[3] & st2[7]) % p) >> 1) & 255;
+
+        lfsr8::u32 hash2;
+        hash2  = (((st2[0] | st1[4]) % p) << 4) & 255;
+        hash2 <<= 8;
+        hash2 |= (((st2[1] | st1[5]) % p) << 4) & 255;
+        hash2 <<= 8;
+        hash2 |= (((st2[2] | st1[6]) % p) << 4) & 255;
+        hash2 <<= 8;
+        hash2 |= (((st2[3] | st1[7]) % p) << 4) & 255;
+
+        lfsr8::u32 hash3;
+        hash3  = (((st1[0] | st1[4]) % p) >> 1) & 255;
+        hash3 <<= 8;
+        hash3 |= (((st1[1] | st1[5]) % p) >> 1) & 255;
+        hash3 <<= 8;
+        hash3 |= (((st1[2] | st1[6]) % p) >> 1) & 255;
+        hash3 <<= 8;
+        hash3 |= (((st1[3] | st1[7]) % p) >> 1) & 255;
+
+        lfsr8::u32 hash4;
+        hash4  = (((st2[0] & st2[4]) % p) << 4) & 255;
+        hash4 <<= 8;
+        hash4 |= (((st2[1] & st2[5]) % p) << 4) & 255;
+        hash4 <<= 8;
+        hash4 |= (((st2[2] & st2[6]) % p) << 4) & 255;
+        hash4 <<= 8;
+        hash4 |= (((st2[3] & st2[7]) % p) << 4) & 255;
+
+        //
+
+        lfsr8::u32 hash5;
+        hash5  = (((st1[0] & st1[4]) % p) >> 1) & 255;
+        hash5 <<= 8;
+        hash5 |= (((st1[1] & st1[5]) % p) >> 1) & 255;
+        hash5 <<= 8;
+        hash5 |= (((st1[2] & st1[6]) % p) >> 1) & 255;
+        hash5 <<= 8;
+        hash5 |= (((st1[3] & st1[7]) % p) >> 1) & 255;
+
+        lfsr8::u32 hash6;
+        hash6  = (((st2[0] | st2[4]) % p) << 4) & 255;
+        hash6 <<= 8;
+        hash6 |= (((st2[1] | st2[5]) % p) << 4) & 255;
+        hash6 <<= 8;
+        hash6 |= (((st2[2] | st2[6]) % p) << 4) & 255;
+        hash6 <<= 8;
+        hash6 |= (((st2[3] | st2[7]) % p) << 4) & 255;
+
+        lfsr8::u32 hash7;
+        hash7  = (((st1[0] | st2[4]) % p) >> 1) & 255;
+        hash7 <<= 8;
+        hash7 |= (((st1[1] | st2[5]) % p) >> 1) & 255;
+        hash7 <<= 8;
+        hash7 |= (((st1[2] | st2[6]) % p) >> 1) & 255;
+        hash7 <<= 8;
+        hash7 |= (((st1[3] | st2[7]) % p) >> 1) & 255;
+
+        lfsr8::u32 hash8;
+        hash8  = (((st2[0] & st1[4]) % p) << 4) & 255;
+        hash8 <<= 8;
+        hash8 |= (((st2[1] & st1[5]) % p) << 4) & 255;
+        hash8 <<= 8;
+        hash8 |= (((st2[2] & st1[6]) % p) << 4) & 255;
+        hash8 <<= 8;
+        hash8 |= (((st2[3] & st1[7]) % p) << 4) & 255;
+
+        hash1 = hash1 ^ hash2 ^ hash3 ^ hash4;
+        hash5 = hash5 ^ hash6 ^ hash7 ^ hash8;
+        return (lfsr8::u64(hash1) << 32) | lfsr8::u64(hash5);
     }
 };
 
