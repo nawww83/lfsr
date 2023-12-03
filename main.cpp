@@ -13,7 +13,7 @@
 #include "timer.hpp"
 
 
-constexpr int p = 251;
+constexpr int p = 7;
 constexpr int m = 4;
 
 using LFSR = lfsr8::LFSR<p, m>;
@@ -55,6 +55,11 @@ public:
     GeometricDistribution(double p): gen(rd()), dist(p) {}
 	GeometricDistribution(GeometricDistribution&& other) noexcept: dist(std::move(other.dist)), gen(std::move(other.gen)) {}
     T operator()() { return dist(gen); }
+	void seed() {
+		auto t = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    	std::seed_seq seq {t & 255, (t >> 8) & 255, (t >> 16) & 255, (t >> 24) & 255};
+    	gen.seed( seq );
+	}
 };
 
 template<class Generator>
@@ -130,6 +135,7 @@ auto calculate_period(LFSR& g) {
 
 auto research_periods(LFSR& g, long long max_T, int iters) {
 	GeometricDistribution<int> r(0.3);
+	r.seed();
 	std::set<long long> Ts;
 	const long long T0 = std::pow(p, m) - 1;
 	int iter = 0;
@@ -160,6 +166,7 @@ auto find_T1_polynomial(long long& T) {
 	STATE K = {1};
 	LFSR g(K);
 	GeometricDistribution<int> r(0.3);
+	r.seed();
 	T = 1;
 	const long long T_ref = std::pow(p, m-1) - 1;
 	while (true) {
@@ -178,6 +185,7 @@ auto find_T0_polynomial(long long& T) {
 	STATE K = {1};
 	LFSR g(K);
 	GeometricDistribution<int> r(0.3);
+	r.seed();
 	T = 1;
 	const long long T_ref = std::pow(p, m) - 1;
 	while (T != T_ref) {
@@ -193,6 +201,7 @@ void test_next_back() {
 	STATE K = {1};
 	LFSR g(K);
 	GeometricDistribution<int> r(0.3);
+	r.seed();
 	const int iters = 256;
 	auto sub_test = [&g, &K, &r](int saturation){
 		int iter = 0;
@@ -271,8 +280,8 @@ int main() {
 		cout << " Completed." << endl;
 	}
 	*/
-	
-	//
+	/*
+	// Hashes test
 	{
 		const int N = 65536*16*16;
 		auto v = std::vector<uint8_t>(N);
@@ -313,27 +322,27 @@ int main() {
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256u + 65536u));
 	}
-	// {
-	// 	cout << "Wait test..." << endl;
-	// 	const long N = 1024*8;
-	// 	std::vector<uint8_t> v(N);
-	// 	std::map<lfsr8::u32, int> hashes;
-	// 	long s = 0;
-	// 	for (int val=0; val<256; val++) {
-	// 		hashes.clear();
-	// 		v.assign(N, (uint8_t)val);
-	// 		assert(v.size() == N);
-	// 		for (int i=1; i<=N; i++) {
-	// 			hashes[lfsr_hash::hash32(v.data(), i)] = i;
-	// 		}
-	// 		// cout << hashes.size() << endl;
-	// 		// assert(hashes.size() > N - 2);
-	// 		s += hashes.size();
-	// 	}
-	// 	assert((N*256 - s) == 0);
-	// 	cout << " => Passed." << endl;
-	// }
-	
+	{
+		const long N = 1024*8;
+		std::vector<uint8_t> v(N);
+		std::map<lfsr8::u32, int> hashes;
+		cout << "N: " << N << ", wait test..." << endl;
+		long s = 0;
+		for (int val=0; val<256; val++) {
+			hashes.clear();
+			v.assign(N, (uint8_t)val);
+			assert(v.size() == N);
+			for (int i=1; i<=N; i++) {
+				hashes[lfsr_hash::hash32(v.data(), i)] = i;
+			}
+			// cout << hashes.size() << endl;
+			// assert(hashes.size() > N - 2);
+			s += hashes.size();
+		}
+		assert((N*256 - s) == 0);
+		cout << " => Passed." << endl;
+	}
+	*/
 	// Random generator test	
 	
 	lfsr_rng::gens g;
@@ -353,7 +362,29 @@ int main() {
 
 		return st1;
 	};
-
+	//
+	std::vector<double> frequencies(256);
+	// auto chisq = [](std::vector<double> f, double E) {
+	// 	double chi2 = 0;
+	// 	for (const auto& el : f) {
+	// 			chi2 += (el - E)*(el - E);
+	// 	}
+	// 	return chi2 / E;
+	// };
+	//
+	auto check_period = [&g]() {
+		long long T = 1;
+		auto h = g.get_u16();
+		while (true) {
+			g.next();
+			if (g.get_u16() != h) {
+				T++;
+				continue;
+			}
+			break;
+		}
+		return T;
+	};
 	int c = 0;
 	int skeep = 0;
 	double ave_dt = 0.;
@@ -363,7 +394,7 @@ int main() {
 	while (1) {
 		c++;
 		STATE st = get_random_u32x4(r);
-		auto st_c = state_conversion(st);
+		const auto st_c = state_conversion(st);
 		timer.reset();
 		g.seed(st_c);
 		double dt = timer.elapsed_ns();
@@ -376,35 +407,68 @@ int main() {
 			skeep++; // it is better to get zero skeeps
 			continue;
 		}
-
 		cout << "Counter: " << c << ", skeep: " << skeep << ", ave dt: " << ave_dt*1e-9 << " s, rms dt: " << std::sqrt(ave_var_dt - ave_dt*ave_dt)*1e-9 <<
-			 ", max dt: " << max_dt*1e-9 << ", min dt: " << min_dt*1e-9 << "; " << g.ii01 << " : " << g.ii02 << " : " << g.qq << endl;
-		auto pretty_print = [&g](int n) {
-			for (int i=0; i<n; ++i) {
-				g.next();
-				cout << std::hex << g.get_u64() << std::dec << ((i < (n-1)) ? ", " : "");
+			 ", max dt: " << max_dt*1e-9 << ", min dt: " << min_dt*1e-9 << "; " << g.ii01 << " : " << g.ii02 << " : " << 
+			 g.T[4] << " : " << g.T[5] << " : " << g.T[6] << " : " << g.T[7] << endl;
+		auto T_ref = check_period();
+		long long iter = 0;
+		long long T_sum = T_ref;
+		cout << "Wait... ref. T: " << format_with_commas(T_ref) << endl;
+		while (true) {
+			iter++;
+			auto T = check_period();
+			if (T != T_ref) {
+				T_sum += T;
+				continue;
 			}
-			cout << endl;
-		};
-		cout << "First 16 64-bit random numbers: ";
-		pretty_print(16);
-		//
-		auto measure_time = [&g](int n) {
-			lfsr8::u64 h = 0;
-			timer.reset();
-			for (int i=0; i<n; ++i) {
-				g.next();
-				h ^= g.get_u64();
-			}
-			double dt = timer.elapsed_ns();
-			cout << "Total hash: " << std::hex << h << std::dec;
-			double perf = 8. * 1000. * double(n) / dt; // 64 bit = 8 bytes
-			cout << ", Random Generator performance: " << perf << " MB/s" << endl;
-		};
-		measure_time(10000000);
+			break;
+		}
+		cout << "Sum Period: " << format_with_commas(T_sum) << ", iters: " << iter << endl;
 		cout << endl;
-	}
+		
+		// Byte-wise chi-square test
+		// frequencies.assign(256, 0.);
+		// {
+		// 	const int N = 65536;
+		// 	for (int i=0; i<N; ++i) {
+		// 		g.next();
+		// 		lfsr8::u16 x = g.get_u16();
+		// 		frequencies[(x >> 0) & 255]++;
+		// 		frequencies[(x >> 8) & 255]++;
+		// 	}
+		// 	double chi2 =  chisq(frequencies, 2*N/256.);
+		// 	cout << "chi-square: " << chi2 << ", N: " << 2*N << " bytes" << endl;
+		// }
+		//
+		// auto pretty_print = [&g](int n) {
+		// 	for (int i=0; i<n; ++i) {
+		// 		g.next();
+		// 		cout << std::hex << g.get_u16() << std::dec << ((i < (n-1)) ? ", " : "");
+		// 	}
+		// 	cout << endl;
+		// };
+		// cout << "First 32 16-bit random numbers: ";
+		// pretty_print(32);
+		//
+		// auto measure_time = [&g](int n) {
+		// 	lfsr8::u32 h = 0;
+		// 	timer.reset();
+		// 	for (int i=0; i<n; ++i) {
+		// 		g.next();
+		// 		h ^= g.get_u16();
+		// 	}
+		// 	double dt = timer.elapsed_ns();
+		// 	cout << "Total hash: " << std::hex << h << std::dec;
+		// 	double perf = 2. * 1000. * double(n) / dt; // 16 bit = 2 bytes
+		// 	cout << ", Random Generator performance: " << perf << " MB/s" << endl;
+		// };
+		// measure_time(10000000);
+		// measure_time(10000);
+		// measure_time(100000);
+		// cout << endl;
+		//
+	}	
 	
-	
+
     return 0;
 }
