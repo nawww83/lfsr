@@ -364,14 +364,13 @@ int main() {
 	};
 	//
 	std::vector<double> frequencies(256);
-	// auto chisq = [](std::vector<double> f, double E) {
-	// 	double chi2 = 0;
-	// 	for (const auto& el : f) {
-	// 			chi2 += (el - E)*(el - E);
-	// 	}
-	// 	return chi2 / E;
-	// };
-	//
+	auto chisq = [](std::vector<double> f, double E) {
+		double chi2 = 0;
+		for (const auto& el : f) {
+				chi2 += (el - E)*(el - E);
+		}
+		return chi2 / E;
+	};
 	auto check_period = [&g]() {
 		long long T = 1;
 		auto h = g.get_u16();
@@ -385,13 +384,14 @@ int main() {
 		}
 		return T;
 	};
-	int c = 0;
-	int skeep = 0;
+	long long c = 0;
+	long long skeep = 0;
 	double ave_dt = 0.;
 	double ave_var_dt = 0.;
 	double min_dt = std::numeric_limits<double>::infinity();
 	double max_dt = 0.;
 	while (1) {
+		cout << endl;
 		c++;
 		STATE st = get_random_u32x4(r);
 		const auto st_c = state_conversion(st);
@@ -407,38 +407,41 @@ int main() {
 			skeep++; // it is better to get zero skeeps
 			continue;
 		}
+		const double T01 = std::pow(19, 4) - 1;
+		const double T02 = std::pow(17, 4) - 1;
 		cout << "Counter: " << c << ", skeep: " << skeep << ", ave dt: " << ave_dt*1e-9 << " s, rms dt: " << std::sqrt(ave_var_dt - ave_dt*ave_dt)*1e-9 <<
 			 ", max dt: " << max_dt*1e-9 << ", min dt: " << min_dt*1e-9 << "; " << g.ii01 << " : " << g.ii02 << " : " << 
-			 g.T[4] << " : " << g.T[5] << " : " << g.T[6] << " : " << g.T[7] << endl;
-		auto T_ref = check_period();
+			 g.T[4]/T01 << " : " << g.T[5]/T01 << " : " << g.T[6]/T02 << " : " << g.T[7]/T02 << endl;
+		auto T_ref_1 = check_period();
+		auto T_ref_2 = check_period();
 		long long iter = 0;
-		long long T_sum = T_ref;
-		cout << "Wait... ref. T: " << format_with_commas(T_ref) << endl;
+		long long T_sum = T_ref_1 + T_ref_2;
+		long long T_last = 0;
+		cout << "Wait... ref. T1/T2: " << format_with_commas(T_ref_1) << "/" << format_with_commas(T_ref_2) << endl;
 		while (true) {
 			iter++;
 			auto T = check_period();
-			if (T != T_ref) {
+			if ((T != T_ref_1) && (T != T_ref_2)) {
 				T_sum += T;
 				continue;
 			}
+			T_last = T;
 			break;
 		}
-		cout << "Sum Period: " << format_with_commas(T_sum) << ", iters: " << iter << endl;
-		cout << endl;
-		
+		cout << "Sum Period: " << format_with_commas(T_sum) << ", iters: " << iter << ", last T: " << format_with_commas(T_last) << endl;
 		// Byte-wise chi-square test
-		// frequencies.assign(256, 0.);
-		// {
-		// 	const int N = 65536;
-		// 	for (int i=0; i<N; ++i) {
-		// 		g.next();
-		// 		lfsr8::u16 x = g.get_u16();
-		// 		frequencies[(x >> 0) & 255]++;
-		// 		frequencies[(x >> 8) & 255]++;
-		// 	}
-		// 	double chi2 =  chisq(frequencies, 2*N/256.);
-		// 	cout << "chi-square: " << chi2 << ", N: " << 2*N << " bytes" << endl;
-		// }
+		frequencies.assign(256, 0.);
+		{
+			const int N = 65536;
+			for (int i=0; i<N; ++i) {
+		 		g.next();
+				lfsr8::u16 x = g.get_u16();
+				frequencies[(x >> 0) & 255]++;
+				frequencies[(x >> 8) & 255]++;
+			}
+			double chi2 =  chisq(frequencies, 2*N/256.);
+			cout << "Byte-wise chi-square: " << chi2 << ", N: " << 2*N << " bytes" << endl;
+		}
 		//
 		// auto pretty_print = [&g](int n) {
 		// 	for (int i=0; i<n; ++i) {
@@ -465,7 +468,6 @@ int main() {
 		// measure_time(10000000);
 		// measure_time(10000);
 		// measure_time(100000);
-		// cout << endl;
 		//
 	}	
 	

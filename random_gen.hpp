@@ -55,9 +55,9 @@ public:
     void seed(STATE st) {
         gp1.set_state(st);
         gp2.set_state(st);
-        u16 i1 = 0;
-        u16 i2 = 0;
-        for (int i=0; i<31; ++i) { // a non-zero salt
+        u16 i1 = 1;
+        u16 i2 = 1;
+        for (int i=0; i<int(primes[0])*int(primes[1]); ++i) { // saturate LFSRs
             gp1.next(i1++);
             gp2.next(i2++);
             i1 %= primes[0];
@@ -78,13 +78,13 @@ public:
                 gp2.next(i2); //  to get random periods T0 < T < q*T0
                 i1++; i1 %= primes[0];
                 i2++; i2 %= primes[1];
-                T[4] = (! gp1.is_state_low(ref1)) ? T[4] : T[0];
-                T[5] = (! gp1.is_state_high(ref1)) ? T[5] : T[1];
-                T[6] = (! gp2.is_state_low(ref2)) ? T[6] : T[2];
-                T[7] = (! gp2.is_state_high(ref2)) ? T[7] : T[3];
+                T[4] = (! gp1.is_state_low(ref1)) ? T[4] : ((T[0] < primes[0]*T01) ? T[0] : T[4]);
+                T[5] = (! gp1.is_state_high(ref1)) ? T[5] : ((T[1] < primes[0]*T01) ? T[1] : T[5]);
+                T[6] = (! gp2.is_state_low(ref2)) ? T[6] : ((T[2] < primes[1]*T02) ? T[2] : T[6]);
+                T[7] = (! gp2.is_state_high(ref2)) ? T[7] : ((T[3] < primes[1]*T02) ? T[3] : T[7]);
                 T[0]++; T[1]++;
                 T[2]++; T[3]++;
-                if ((T[4] > T01) && (T[6] > T02) && (T[5] > T01) && (T[7] > T02)) {
+                if ((T[0] >= primes[0]*T01) && (T[1] >= primes[0]*T01) && (T[2] >= primes[1]*T02) && (T[3] >= primes[1]*T02)) {
                     break;
                 }
                 // break;
