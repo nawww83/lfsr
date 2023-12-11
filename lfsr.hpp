@@ -173,6 +173,9 @@ public:
 	auto get_state() const {
 		return m_state;
 	}
+	auto get_cell(int idx) const {
+		return m_state[idx];
+	}
 private:
 	alignas(16) STATE m_state {};
 	alignas(16) STATE m_K {};
