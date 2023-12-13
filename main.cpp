@@ -197,6 +197,48 @@ auto find_T0_polynomial(long long& T) {
 	return K;
 }
 
+void test_() {
+	// auto calc_inv_K = [](int K) {
+	// 	if (K > 0) {
+	// 		int inv_K = 1;
+	// 		while (true) {
+	// 			if (((K*inv_K) % p) == 1) {
+	// 				break;
+	// 			}
+	// 			inv_K++;
+	// 		}
+	// 		return inv_K;
+	// 	}
+	// 	return 0;
+	// };
+	// STATE K = {7, 1, 6, 0, 4, 1, 3, 2};    // p=251
+	STATE K = {4, 1, 3, 2};    // p=251
+	LFSR g(K);
+	g.set_unit_state();
+	g.saturate(17);
+	// const STATE ref = g.get_state();
+	std::vector<lfsr8::MType<m>::SAMPLE> v{};
+	int input = 0 % p;
+	while (1) {
+		g.next(input);
+		input++; input %= p;
+		v.push_back( g.get_cell(m-1) );
+		if (input == 0) {
+			break;
+		}
+	}
+	// g.set_state(ref);
+	while (1) {
+		g.back( v.back() );
+		std::cout << g.get_cell(m-1) << ", ";
+		v.pop_back();
+		if (v.size() == 0) {
+			break;
+		}
+	}
+	std::cout << std::endl;
+}
+
 void test_next_back() {
 	STATE K = {1};
 	LFSR g(K);
@@ -212,19 +254,18 @@ void test_next_back() {
 		while (iter < iters) {
 			K = get_random_coeffs(r);
 			g.set_K(K);
-
 			g.set_unit_state();
 			g.saturate(saturation);
-			const int max_i = 32 + (31*iter/iters);
+			const int max_i = 32 + ((16383*iter)/iters);
 			const STATE ref = g.get_state();
 			for (int i=0; i<max_i; ++i) {
-				g.next(i & 65535);
+				g.next(i % p); // mod p: keep linearity
 				v.push_back( g.get_cell(check_pos) );
 			}
 			bool result = true;
 			for (int i=0; i<max_i; ++i) {
 				result &= (v.back() == g.get_cell(check_pos));
-				g.back((max_i - 1 - i) & 65535);
+				g.back((max_i - 1 - i) % p); // mod p: keep linearity
 				v.pop_back();
 			}
 			assert(result);
@@ -236,6 +277,39 @@ void test_next_back() {
 	sub_test(5);
 	sub_test(8);
 	sub_test(10);
+}
+
+auto second_level_period_test(lfsr_rng::gens& g, long long& iter, long long& T_next) {
+	auto check_period = [&g]() {
+		long long T = 1;
+		auto h = g.get_u16();
+		while (true) {
+			g.next();
+			if (g.get_u16() != h) {
+				T++;
+				continue;
+			}
+			break;
+		}
+		return T;
+	};
+	auto T_ref_1 = check_period();
+	auto T_ref_2 = check_period();
+	iter = 0;
+	long long T_sum = T_ref_1;
+	T_next = 0;
+	std::cout << "Wait... ref. T: " << format_with_commas(T_ref_1) << ", next T: " << format_with_commas(T_ref_2) << std::endl;
+	while (true) {
+		iter++;
+		auto T = check_period();
+		if (T != T_ref_1) {
+			T_sum += T;
+			continue;
+		}
+		T_next = check_period();
+		break;
+	}
+	return T_sum;
 }
 
 
@@ -280,15 +354,17 @@ int main() {
 	}
 	*/
 	//
-	//
-	
 	{
 		cout << "Wait for Next-Back test..." << endl;
 		test_next_back();
 		cout << " All Ok! Completed." << endl;
 	}
-	
-	/*
+	// {
+	// 	cout << "Wait for some test..." << endl;
+	// 	test_();
+	// 	cout << " All Ok! Completed." << endl;
+	// }
+
 	// Hashes test
 	{
 		const int N = 65536*16*16;
@@ -330,8 +406,9 @@ int main() {
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256u + 65536u));
 	}
+	/*
 	{
-		const long N = 1024*8;
+		const long N = 1024*8; // the more N is passed, the better the LFSR hash
 		std::vector<uint8_t> v(N);
 		std::map<lfsr8::u32, int> hashes;
 		cout << "N: " << N << ", wait test..." << endl;
@@ -356,7 +433,6 @@ int main() {
 	lfsr_rng::gens g;
 	GeometricDistribution<int> r(0.3);
 	r.seed();
-
 	auto state_conversion = [](lfsr8::u32x4 st) {
 		lfsr8::u16x8 st1;
 		st1[0] = st[0];
@@ -372,36 +448,14 @@ int main() {
 		return st1;
 	};
 	//
-	std::vector<double> frequencies(256);
-	auto chisq = [](const std::vector<double>& f, double E) {
-		double chi2 = 0;
-		for (const auto& el : f) {
-			chi2 += (el - E)*(el - E);
-		}
-		return chi2 / E;
-	};
-	// auto check_period = [&g]() {
-	// 	long long T = 1;
-	// 	auto h = g.get_u16();
-	// 	while (true) {
-	// 		g.next();
-	// 		if (g.get_u16() != h) {
-	// 			T++;
-	// 			continue;
-	// 		}
-	// 		break;
-	// 	}
-	// 	return T;
-	// };
 	long long c = 0;
 	long long skeep = 0;
-	double ave_chi2 = 0.;
-	double ave_dt = 0.;
-	// double ave_T = 0.;
-	double ave_var_dt = 0.;
+	double ave_dt = 0;
+	double ave_perf = 0;
+	double ave_var_dt = 0;
 	double min_dt = std::numeric_limits<double>::infinity();
-	double max_dt = 0.;
-	while (1) {
+	double max_dt = 0;
+	while (true) {
 		cout << endl;
 		STATE st = get_random_u32x4(r);
 		const auto st_c = state_conversion(st);
@@ -409,8 +463,9 @@ int main() {
 		g.seed(st_c);
 		double dt = timer.elapsed_ns();
 		//
-		if (! g.is_succes()) { // if not good, we must change initial state (seed), for ex., increment it etc
+		if (! g.is_succes()) {
 			skeep++; // it is better to get zero skeeps
+			std::cout << "Skipped! " << std::endl;
 			continue;
 		}
 		//
@@ -421,35 +476,35 @@ int main() {
 		max_dt = std::max(max_dt, dt);
 		const double T01 = std::pow(19, 4) - 1;
 		const double T02 = std::pow(17, 4) - 1;
+		const double T_bits = std::log2(g.T[4]) + std::log2(g.T[5]) + std::log2(g.T[6]) + std::log2(g.T[7]);
 		cout << "Counter: " << c << ", skeep: " << skeep << ", ave dt: " << ave_dt*1e-9 << " s, rms dt: " << std::sqrt(ave_var_dt - ave_dt*ave_dt)*1e-9 <<
-			 ", max dt: " << max_dt*1e-9 << ", min dt: " << min_dt*1e-9 << "; " << g.ii01 << " : " << g.ii02 << " : " << 
-			 g.T[4]/T01 << " : " << g.T[5]/T01 << " : " << g.T[6]/T02 << " : " << g.T[7]/T02 << endl;
+			 ", max dt: " << max_dt*1.e-09 << ", min dt: " << min_dt*1e-9 << "; " << g.ii01 << " : " << g.ii02 << " : " << 
+			 g.T[4]/T01 << " : " << g.T[5]/T01 << " : " << g.T[6]/T02 << " : " << g.T[7]/T02 << ", T bits: " << T_bits << endl;
 		// Second level period test
 		// {
+		// 	static double ave_T = 0;
+		// 	long long iter;
+		// 	long long T_next;
 		// 	timer.reset();
-		// 	auto T_ref_1 = check_period();
-		// 	auto T_ref_2 = check_period();
-		// 	long long iter = 0;
-		// 	long long T_sum = T_ref_1;
-		// 	long long T_next = 0;
-		// 	cout << "Wait... ref. T: " << format_with_commas(T_ref_1) << ", next T: " << format_with_commas(T_ref_2) << endl;
-		// 	while (true) {
-		// 		iter++;
-		// 		auto T = check_period();
-		// 		if (T != T_ref_1) {
-		// 			T_sum += T;
-		// 			continue;
-		// 		}
-		// 		T_next = check_period();
-		// 		break;
-		// 	}
-		// 	auto dt = timer.elapsed_ns();
+		// 	long long T_sum = second_level_period_test(g, iter, T_next);
+		// 	double dt = timer.elapsed_ns();
 		// 	ave_T += ((double)T_sum - ave_T) / (1.*c);
-		// 	cout << "Sum Period: " << format_with_commas(T_sum) << ", next T: " << format_with_commas(T_next) << ", iters: " << iter << ", elapsed: " << dt*1e-09 << " s, ave T: " << format_with_commas((long long)(ave_T)) << endl;
+		// 	std::cout << "Sum Period: " << format_with_commas(T_sum) << ", iters: " << iter << ", ave T: " << format_with_commas((long long)(ave_T)) << 
+		// 	", T next: " << format_with_commas(T_next) <<
+		// 	", elapsed: " << dt*1.e-09 << " s." << std::endl;
 		// }
 		// Byte-wise chi-square test
-		frequencies.assign(256, 0.);
 		{
+			static std::vector<double> frequencies(256);
+			auto chisq = [](const std::vector<double>& f, double E) {
+				double chi2 = 0;
+				for (const auto& el : f) {
+					chi2 += (el - E)*(el - E);
+				}
+				return chi2 / E;
+			};
+			frequencies.assign(256, 0.);
+			static double ave_chi2 = 0;
 			const int N = 65536;
 			for (int i=0; i<N; ++i) {
 		 		g.next();
@@ -462,17 +517,16 @@ int main() {
 			cout << "Byte-wise chi-square: " << chi2 << ", N: " << 2*N << " bytes. Ave chi2: " << ave_chi2 << endl;
 		}
 		//
-		// auto pretty_print = [&g](int n) {
-		// 	for (int i=0; i<n; ++i) {
-		// 		g.next();
-		// 		cout << std::hex << g.get_u16() << std::dec << ((i < (n-1)) ? ", " : "");
-		// 	}
-		// 	cout << endl;
-		// };
-		// cout << "First 32 16-bit random numbers: ";
-		// pretty_print(32);
-		//
-		auto measure_time = [&g](int n) {
+		auto pretty_print = [&g](int n) {
+			for (int i=0; i<n; ++i) {
+				g.next();
+				cout << std::hex << g.get_u16() << std::dec << ((i < (n-1)) ? ", " : "");
+			}
+			cout << endl;
+		};
+		cout << "First 32 16-bit random numbers: ";
+		pretty_print(32);
+		auto measure_time = [&g, ave_perf](int n) {
 			lfsr8::u32 h = 0;
 			timer.reset();
 			for (int i=0; i<n; ++i) {
@@ -482,13 +536,16 @@ int main() {
 			double dt = timer.elapsed_ns();
 			cout << "Total hash: " << std::hex << h << std::dec;
 			double perf = 2. * 1000. * double(n) / dt; // 16 bit = 2 bytes
-			cout << ", Random Generator performance: " << perf << " MB/s" << endl;
+			cout << ", Random Generator performance: " << perf << ", on average: " << ave_perf << " MB/s" << endl;
+			return perf;
 		};
-		measure_time(10000000);
+		auto perf = measure_time(10000000);
 		// measure_time(10000);
 		// measure_time(100000);
 		//
+		ave_perf += (perf - ave_perf) / (1.*c);
 	}
+	
 
     return 0;
 }
