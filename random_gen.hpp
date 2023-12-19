@@ -25,7 +25,7 @@ using STATE = lfsr8::u16x8;
 
 static constexpr STATE K1 = {9, 5, 2, 0, 4, 2, 2, 6};    // p=19
 static constexpr STATE K2 = {3, 4, 2, 1, 6, 1, 2, 1};    // p=17
-static constexpr std::array<u16, 2> primes {7, 11}; // Sawtooth periods
+static constexpr std::array<u16, 2> primes {7, 11}; // Sawtooth periods: such that T = p^4 - 1 is not divisible by the primes
 
 // class MyPrimes {
 // public:
@@ -75,21 +75,21 @@ public:
             u16 i1 = i01;
             u16 i2 = i02;
             while (true) {
-                gp1.next(i1); //  sawtooth modulation
-                gp2.next(i2); //  to get random periods T0 < T < q*T0
-                i1++; i2++;
+                gp1.next(i1); //  Sawtooth modulation
+                gp2.next(i2); //  to get random periods T[i] such that sum of T[i] is equal to q*T0, where the q - Sawtooth period
+                i1++; i2++;   //  The remainder mod(p^4 - 1 , q) is not zero => we achieve all indexes i in [0, q) when LFSR is in the same reference state
                 i1 %= primes[0];
-                i2 %= primes[1];
+                i2 %= primes[1]; // We visit almost all i ecxept one => we set the restriction T < q*T0 below
                 T[4] = (! gp1.is_state_low(ref1)) ? T[4] : ((T[0] < primes[0]*T01) ? T[0] : T[4]);
                 T[5] = (! gp1.is_state_high(ref1)) ? T[5] : ((T[1] < primes[0]*T01) ? T[1] : T[5]);
                 T[6] = (! gp2.is_state_low(ref2)) ? T[6] : ((T[2] < primes[1]*T02) ? T[2] : T[6]);
                 T[7] = (! gp2.is_state_high(ref2)) ? T[7] : ((T[3] < primes[1]*T02) ? T[3] : T[7]);
                 T[0]++; T[1]++;
                 T[2]++; T[3]++;
+                // All counters are out of the range
                 if ((T[0] >= primes[0]*T01) && (T[1] >= primes[0]*T01) && (T[2] >= primes[1]*T02) && (T[3] >= primes[1]*T02)) {
                     break;
                 }
-                // break;
             }
             auto gcd = std::gcd(std::gcd(T[4], T[5]), std::gcd(T[6], T[7]));
             return ((gcd < 2) && (T[4] > T01) && (T[5] > T01) && (T[6] > T02) && (T[7] > T02)) ? 1 : 0;

@@ -13,7 +13,7 @@
 #include "timer.hpp"
 
 
-constexpr int p = 251;
+constexpr int p = 241;
 constexpr int m = 4;
 
 using LFSR = lfsr8::LFSR<p, m>;
@@ -95,21 +95,14 @@ auto get_random_coeffs(Generator& g) {
 template<class Generator>
 auto get_random_u32x4(Generator& g) {
 	lfsr8::u32x4 st {};
-	while (1) {
-		lfsr8::u64 sum = 0;
-		for (int i=0; i<m; ++i) {
-			st[i] = g() & 255;
-			st[i] <<= 8;
- 			st[i] |= g() & 255;
-			st[i] <<= 8;
- 			st[i] |= g() & 255;
-			st[i] <<= 8;
- 			st[i] |= g() & 255;
-			sum += st[i];
-		}
-		if (sum != 0) {
-			break;
-		}
+	for (int i=0; i<m; ++i) {
+		st[i] = g() & 255;
+		st[i] <<= 8;
+		st[i] |= g() & 255;
+		st[i] <<= 8;
+		st[i] |= g() & 255;
+		st[i] <<= 8;
+		st[i] |= g() & 255;
 	}
 	return st;
 }
@@ -132,6 +125,36 @@ auto calculate_period(LFSR& g) {
 	}
 	return T;
 }
+
+// auto calculate_sawtooth_period(LFSR& g, int q, int i0=0) {
+// 	assert( q > 0 );
+// 	const long long T0 = std::pow(p, m) - 1;
+// 	long long T = 1;
+// 	long long prev_T = 0;
+// 	const auto ref = g.get_state();
+// 	int i = i0;
+// 	while (true) {
+// 		g.next(i);
+// 		i++;
+// 		i %= q;
+// 		if (! g.is_state(ref)) {
+// 			T++;
+// 			continue;
+// 		}
+// 		long long curr_T = T - prev_T;
+// 		std::cout << " sub T: " << format_with_commas(curr_T) << ", i: " << i << std::endl;
+// 		prev_T = T;
+// 		if (i == i0) {
+// 			break;
+// 		}
+// 		T++;
+// 		if (T > (long long)(q)*T0) {
+// 			T = 0; // Abnormal period: unachievable state
+// 			break;	
+// 		}
+// 	}
+// 	return T;
+// }
 
 auto research_periods(LFSR& g, long long max_T, int iters) {
 	GeometricDistribution<int> r(0.3);
@@ -284,6 +307,20 @@ int main() {
 		test_next_back();
 		cout << " All Ok! Completed." << endl;
 	}
+	// {
+	// 	const STATE K = {13, 2, 5, 10};  // T = 241^4 - 1
+	// 	const STATE initial_state = {1, 1, 0, 0};
+	// 	LFSR g(K);
+	// 	g.set_state(initial_state);
+	// 	cout << "Initial state: ";
+	// 	for (int i=0; i<m; ++i) {
+	// 		cout << g.get_cell(i) << ", ";
+	// 	}
+	// 	cout << endl;
+	// 	cout << "Wait for period calculation..." << endl;
+	// 	auto T = calculate_sawtooth_period(g, 7);
+	// 	cout << " T: " << format_with_commas(T) << endl;
+	// }
 	// LFSR hashes test
 	{
 		const int N = 65536*16*16;
@@ -391,8 +428,8 @@ int main() {
 		ave_var_dt += (dt*dt - ave_var_dt) / (1.*c);
 		min_dt = std::min(min_dt, dt);
 		max_dt = std::max(max_dt, dt);
-		const double T01 = std::pow(19, 4) - 1;
-		const double T02 = std::pow(17, 4) - 1;
+		const double T01 = std::pow(lfsr_rng::p1, 4) - 1;
+		const double T02 = std::pow(lfsr_rng::p2, 4) - 1;
 		const double T_bits = std::log2(g.T[4]) + std::log2(g.T[5]) + std::log2(g.T[6]) + std::log2(g.T[7]);
 		cout << "Counter: " << c << ", skeep: " << skeep << ", ave dt: " << ave_dt*1e-9 << " s, rms dt: " << std::sqrt(ave_var_dt - ave_dt*ave_dt)*1e-9 <<
 			 ", max dt: " << max_dt*1.e-09 << ", min dt: " << min_dt*1e-9 << "; " << g.ii01 << " : " << g.ii02 << " : " << 
@@ -457,6 +494,5 @@ int main() {
 		ave_perf += (perf - ave_perf) / (1.*c);
 	}
 	
-
     return 0;
 }
