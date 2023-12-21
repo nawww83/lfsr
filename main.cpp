@@ -383,6 +383,9 @@ int main() {
 		assert((N*256 - s) == 0);
 		cout << " => Passed." << endl;
 	}
+
+	// return 0;
+
 	// Random generator test
 	lfsr_rng::gens g;
 	GeometricDistribution<int> r(0.3);
@@ -406,6 +409,7 @@ int main() {
 	long long skeep = 0;
 	double ave_dt = 0;
 	double ave_perf = 0;
+	double max_perf = 0;
 	double ave_var_dt = 0;
 	double min_dt = std::numeric_limits<double>::infinity();
 	double max_dt = 0;
@@ -447,6 +451,7 @@ int main() {
 			};
 			frequencies.assign(256, 0.);
 			static double ave_chi2 = 0;
+			static double max_chi2 = 0;
 			const int N = 16384;
 			for (int i=0; i<N; ++i) {
 		 		lfsr8::u64 x = g.next_u64();
@@ -462,7 +467,8 @@ int main() {
 			}
 			double chi2 =  chisq(frequencies, 8*N/256.);
 			ave_chi2 += (chi2 - ave_chi2) / (1.*c);
-			cout << "Byte-wise chi-square: " << chi2 << ", N: " << 8*N << " bytes. Ave chi2: " << ave_chi2 << endl;
+			max_chi2 = std::max(chi2, max_chi2);
+			cout << "Byte-wise chi-square: " << chi2 << ", N: " << 8*N << " bytes. Ave chi2: " << ave_chi2 << ", max chi2: " << max_chi2 << endl;
 		}
 		//
 		// auto pretty_print = [&g](int n) {
@@ -474,7 +480,7 @@ int main() {
 		// };
 		// cout << "First 32 16-bit random numbers: ";
 		// pretty_print(32);
-		auto measure_time = [&g, ave_perf](int n) {
+		auto measure_time = [&g, ave_perf, max_perf](int n) {
 			timer.reset();
 			lfsr8::u64 h = 0;
 			for (int i=0; i<n; ++i) {
@@ -484,7 +490,7 @@ int main() {
 			double dt = timer.elapsed_ns();
 			cout << "Hash u64: " << std::hex << h << std::dec;
 			double perf = 8. * 1000. * double(n) / dt; // 16 bit = 2 bytes; 64 bit = 8 bytes
-			cout << ", Random Generator performance: " << perf << ", on average: " << ave_perf << " MB/s" << endl;
+			cout << ", Random Generator performance: " << perf << ", on average: " << ave_perf << ", max: " << max_perf << " MB/s" << endl;
 			return perf;
 		};
 		auto perf = measure_time(10000000);
@@ -492,6 +498,7 @@ int main() {
 		// measure_time(100000);
 		//
 		ave_perf += (perf - ave_perf) / (1.*c);
+		max_perf = std::max(perf, max_perf);
 	}
 	
     return 0;

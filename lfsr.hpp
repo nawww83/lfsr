@@ -63,6 +63,21 @@ struct simd_printer {
 };
 
 // static simd_printer sp;
+
+// make: [0, 0, 0, x_high, 0, 0, 0, x_low] result register 'res'
+// and   [0, 0, 0, -1, 0, 0, 0, -1] mask register 'mask'
+static auto propagate(u16 x_low, u16 x_high, __m128i& res, __m128i& mask) {
+    __m128i a = _mm_set1_epi16(x_low);
+    a = _mm_xor_si128(a, _mm_slli_si128(a, 8));
+    __m128i b = _mm_set1_epi16(x_high);
+    b = _mm_xor_si128(b, _mm_srli_si128(b, 8));
+    res = _mm_or_si128(a, b);
+    __m128i q = _mm_slli_si128( _mm_set1_epi32(-1), 8);
+    mask = _mm_xor_si128(_mm_slli_si128( _mm_set1_epi32(-1), 10), q);
+    mask = _mm_xor_si128(mask, _mm_srli_si128(mask, 8));
+    res = _mm_and_si128(res, mask);
+}
+
 #endif
 
 
@@ -221,9 +236,14 @@ public:
 			a = _mm_xor_si128(a, b);
 			b = _mm_load_si128((const __m128i*)&m_K[0]);
 			__m128i c = _mm_mullo_epi16(a, b);
+
+			__m128i inp;
+			__m128i mask;
+			propagate(input, input, inp, mask);
+			mask = _mm_andnot_si128(mask, _mm_set1_epi16(-1));
 			
-			const __m128i mask = _mm_set_epi16(-1, -1, -1, 0, -1, -1, -1, 0);
-			__m128i inp = _mm_andnot_si128( mask, _mm_set1_epi16(input) );
+			// const __m128i mask = _mm_set_epi16(-1, -1, -1, 0, -1, -1, -1, 0);
+			// __m128i inp = _mm_andnot_si128( mask, _mm_set1_epi16(input) );
 
 			__m128i d = _mm_load_si128((const __m128i*)&m_state[0]);
 			d = _mm_and_si128(mask, _mm_slli_si128(d, 2));
@@ -255,12 +275,18 @@ public:
 			b = _mm_load_si128((const __m128i*)&m_K[0]);
 			__m128i c = _mm_mullo_epi16(a, b);
 			
-			const __m128i mask1 = _mm_set_epi16(-1, -1, -1, -1, -1, -1, -1, 0);
-			const __m128i mask2 = _mm_set_epi16(-1, -1, -1, 0, -1, -1, -1, -1);
-			__m128i inp = _mm_andnot_si128( mask1, _mm_set1_epi16(inp1) );
-			inp = _mm_or_si128( inp, _mm_andnot_si128( mask2, _mm_set1_epi16(inp2) ) );
+			// const __m128i mask1 = _mm_set_epi16(-1, -1, -1, -1, -1, -1, -1, 0);
+			// __m128i mask1 = _mm_slli_si128(_mm_set1_epi16(-1), 2);
+			// const __m128i mask2 = _mm_set_epi16(-1, -1, -1, 0, -1, -1, -1, -1);
+			// __m128i inp = _mm_andnot_si128( mask1, _mm_set1_epi16(inp1) );
+			// inp = _mm_or_si128( inp, _mm_andnot_si128( mask2, _mm_set1_epi16(inp2) ) );
 
-			const __m128i mask = _mm_and_si128(mask1, mask2); // _mm_set_epi16(-1, -1, -1, 0, -1, -1, -1, 0);
+			__m128i inp;
+			__m128i mask;
+			propagate(inp1, inp2, inp, mask);
+			mask = _mm_andnot_si128(mask, _mm_set1_epi16(-1));
+
+			// const __m128i mask = _mm_and_si128(mask1, mask2); // _mm_set_epi16(-1, -1, -1, 0, -1, -1, -1, 0);
 			__m128i d = _mm_load_si128((const __m128i*)&m_state[0]);
 			d = _mm_and_si128(mask, _mm_slli_si128(d, 2));
 			d = _mm_add_epi16(c, d);
