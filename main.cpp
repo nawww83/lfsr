@@ -6,19 +6,40 @@
 #include <map>
 #include <limits>
 #include <vector>
+#include <algorithm>
+#include <bit>
+#include <concepts>
+#include <charconv>
 
 #include "lfsr_hash.hpp"
 #include "random_gen.hpp"
-
 #include "timer.hpp"
 
 
-constexpr int p = 241;
-constexpr int m = 4;
-
+template <int p, int m>
 using LFSR = lfsr8::LFSR<p, m>;
+
+template <int m>
 using STATE = lfsr8::MType<m>::STATE;
 
+template <int p, int m>
+void increment_state(STATE<m>& x) {
+	int carry = 0;
+	x[0]++;
+	if (x[0] == p) {
+		carry = 1;
+		x[0] = 0;
+	}
+	for (int i=1; i<m; ++i) {
+		x[i] += carry;
+		if (x[i] == p) {
+			carry = 1;
+			x[i] = 0;
+		} else {
+			carry = 0;
+		}
+	};
+}
 
 template<int x>
 constexpr auto is_prime() {
@@ -31,16 +52,29 @@ constexpr auto is_prime() {
 	return ok;
 }
 
-template <typename T>
-std::string format_with_commas(T x) {
-	auto s = std::to_string(x);
-	int n = s.length() - 3;
-	const int stop = (x >= 0) ? 0 : 1;
-	while (n > stop) {
-		s.insert(n, "'");
-		n -= 3;
-	}
-	return s;
+template <char sep='`', int width=3>
+void show_with_thousands_separator(std::integral auto x) {
+    constexpr int max_digits = int(std::log2(2.) * std::popcount(-1ull) / std::log2(10.)) + 1;
+    std::array<char, max_digits> str;
+    std::array<char, max_digits + max_digits/width> str_th;
+    if (auto [ptr, ec] = std::to_chars(str.data(), str.data() + str.size(), x); ec == std::errc()) {
+        const int sign = (str[0] == '-') ? 1 : 0;
+        const int digits = ptr - str.data();
+        const int num_of_seps = (digits-1-sign) / width;
+        const int new_len = num_of_seps + digits;
+        char* c_ptr = str_th.data() + new_len - width;
+        for (int i=0; i<num_of_seps; ++i) {
+            std::memcpy(c_ptr, str.data() + digits - (i+1)*width, width);
+            c_ptr -= sizeof(sep);
+            *c_ptr = sep;
+            c_ptr -= width;
+        }
+        const int reseque = (digits-sign) % width;
+        const bool is_full_group = (reseque == 0);
+        const int res_len = (!is_full_group) ? reseque + sign : width + sign;
+        std::memcpy(str_th.data(), str.data(), res_len);
+        std::cout << std::string_view(str_th.data(), str_th.data() + new_len) << '\n';
+    }
 }
 
 static std::random_device rd;
@@ -62,9 +96,9 @@ public:
 	}
 };
 
-template<class Generator>
+template<int p, int m, class Generator>
 auto get_random_state(Generator& g) {
-	STATE st {};
+	STATE<m> st {};
 	while (1) {
 		int sum = 0;
 		for (int i=0; i<m; ++i) {
@@ -78,9 +112,9 @@ auto get_random_state(Generator& g) {
 	return st;
 }
 
-template<class Generator>
+template<int p, int m, class Generator>
 auto get_random_coeffs(Generator& g) {
-	STATE st {};
+	STATE<m> st {};
 	while (1) {
 		for (int i=0; i<m; ++i) {
 			st[i] = g() % p;
@@ -92,7 +126,7 @@ auto get_random_coeffs(Generator& g) {
 	return st;
 }
 
-template<class Generator>
+template<int m, class Generator>
 auto get_random_u32x4(Generator& g) {
 	lfsr8::u32x4 st {};
 	for (int i=0; i<m; ++i) {
@@ -107,7 +141,8 @@ auto get_random_u32x4(Generator& g) {
 	return st;
 }
 
-auto calculate_period(LFSR& g) {
+template <int p, int m>
+auto calculate_period(LFSR<p, m>& g) {
 	long long T = 1;
 	const long long T0 = std::pow(p, m) - 1;
 	const auto ref = g.get_state();
@@ -126,44 +161,34 @@ auto calculate_period(LFSR& g) {
 	return T;
 }
 
-// auto calculate_sawtooth_period(LFSR& g, int q, int i0=0) {
-// 	assert( q > 0 );
-// 	const long long T0 = std::pow(p, m) - 1;
-// 	long long T = 1;
-// 	long long prev_T = 0;
-// 	const auto ref = g.get_state();
-// 	int i = i0;
-// 	while (true) {
-// 		g.next(i);
-// 		i++;
-// 		i %= q;
-// 		if (! g.is_state(ref)) {
-// 			T++;
-// 			continue;
-// 		}
-// 		long long curr_T = T - prev_T;
-// 		std::cout << " sub T: " << format_with_commas(curr_T) << ", i: " << i << std::endl;
-// 		prev_T = T;
-// 		if (i == i0) {
-// 			break;
-// 		}
-// 		T++;
-// 		if (T > (long long)(q)*T0) {
-// 			T = 0; // Abnormal period: unachievable state
-// 			break;	
-// 		}
-// 	}
-// 	return T;
-// }
+template <int p, int m>
+auto calculate_sawtooth_period(LFSR<p, m>& g, int q, int& i0) {
+	assert( q > 0 );
+	long long T = 1;
+	const auto ref = g.get_state();
+	i0 %= q;
+	while (true) {
+		g.next(i0);
+		i0++;
+		i0 %= q;
+		if (! g.is_state(ref)) {
+			T++;
+			continue;
+		}
+		break;
+	}
+	return T;
+}
 
-auto research_periods(LFSR& g, long long max_T, int iters) {
+template <int p, int m>
+auto research_periods(LFSR<p, m>& g, long long max_T, int iters) {
 	GeometricDistribution<int> r(0.3);
 	r.seed();
 	std::set<long long> Ts;
 	const long long T0 = std::pow(p, m) - 1;
 	int iter = 0;
 	while (true) {
-		auto st = get_random_state(r);
+		auto st = get_random_state<p, m>(r);
 		g.set_state(st);
 		auto T = calculate_period(g);
 		if (T < 1) {
@@ -185,15 +210,16 @@ auto research_periods(LFSR& g, long long max_T, int iters) {
 	return Ts;
 }
 
+template <int p, int m>
 auto find_T1_polynomial(long long& T) {
-	STATE K = {1};
-	LFSR g(K);
+	STATE<m> K = {1};
+	LFSR<p, m> g(K);
 	GeometricDistribution<int> r(0.3);
 	r.seed();
 	T = 1;
 	const long long T_ref = std::pow(p, m-1) - 1;
 	while (true) {
-		K = get_random_coeffs(r);
+		K = get_random_coeffs<p, m>(r);
 		g.set_K(K);
 		auto Ts = research_periods(g, T_ref, 30);
 		if (Ts.contains(T_ref)) {
@@ -204,15 +230,16 @@ auto find_T1_polynomial(long long& T) {
 	return K;
 }
 
+template <int p, int m>
 auto find_T0_polynomial(long long& T) {
-	STATE K = {1};
-	LFSR g(K);
+	STATE<m> K = {1};
+	LFSR<p, m> g(K);
 	GeometricDistribution<int> r(0.3);
 	r.seed();
 	T = 1;
 	const long long T_ref = std::pow(p, m) - 1;
 	while (T != T_ref) {
-		K = get_random_coeffs(r);
+		K = get_random_coeffs<p, m>(r);
 		g.set_K(K);
 		g.set_state(K);
 		T = calculate_period(g);
@@ -220,25 +247,27 @@ auto find_T0_polynomial(long long& T) {
 	return K;
 }
 
+template <int p, int m>
 void test_next_back() {
-	STATE K = {1};
-	LFSR g(K);
+	STATE<m> K = {1};
+	LFSR<p, m> g(K);
+	using SAMPLE = lfsr8::MType<m>::SAMPLE;
 	GeometricDistribution<int> r(0.3);
 	r.seed();
 	const int iters = 256;
 	auto sub_test = [&g, &K, &r](int saturation){
 		int iter = 0;
 		const int check_pos = 0;
-		std::vector<lfsr8::MType<m>::SAMPLE> v{};
+		std::vector<SAMPLE> v{};
 		assert(check_pos >= 0);
 		assert(check_pos < m);
 		while (iter < iters) {
-			K = get_random_coeffs(r);
+			K = get_random_coeffs<p, m>(r);
 			g.set_K(K);
 			g.set_unit_state();
 			g.saturate(saturation);
 			const int max_i = 32 + ((16383*iter)/iters);
-			const STATE ref = g.get_state();
+			const auto ref = g.get_state();
 			for (int i=0; i<max_i; ++i) {
 				g.next(i % p); // mod p: keep linearity
 				v.push_back( g.get_cell(check_pos) );
@@ -266,22 +295,22 @@ static timer_n::Timer timer;
 int main() {
 	using namespace std;
 	
-	static_assert(is_prime<p>());
+	// static_assert(is_prime<p>());
 	/*
 	cout << "LFSR with modulo p: " << p << ", length m: " << m << endl;
 	{
 		cout << "Wait for maximal period T0 = p^m - 1 polynomial look up..." << endl;
 		long long T;
 		timer.reset();
-		STATE K = find_T0_polynomial(T);
+		STATE<m> K = find_T0_polynomial<p, m>(T);
 		auto dt = 1.e-9*timer.elapsed_ns();
 		cout << " Found coefficients K: (";
 		for (int i=0; i<m-1; ++i) {
 			cout << K[i] << ", ";
 		}
 		cout << K[m-1] << ")" << ", dt: " << dt << " sec." << endl;
-		auto T_str = format_with_commas(T);
-		cout << " Period T0: " << T_str << endl;
+		cout << " Period T0: ";
+		show_with_thousands_separator(T);
 	}
 	*/
 	//
@@ -290,39 +319,120 @@ int main() {
 		long long T;
 		cout << "Wait for period T1 = p^(m-1) - 1 polynomial look up..." << endl;
 		timer.reset();
-		STATE K = find_T1_polynomial(T);
+		STATE<m> K = find_T1_polynomial<p, m>(T);
 		auto dt = 1.e-9*timer.elapsed_ns();
 		cout << " Found coefficients K: (";
 		for (int i=0; i<m-1; ++i) {
 			cout << K[i] << ", ";
 		}
 		cout << K[m-1] << ")" << ", dt: " << dt << " sec." << endl;
-		auto T_str = format_with_commas(T);
-		cout << " Period T1: " << T_str << endl;
+		cout << " Period T1: ";
+		show_with_thousands_separator(T);
 	}
 	*/
 	//
 	{
 		cout << "Wait for Next-Back test..." << endl;
-		test_next_back();
+		test_next_back<19, 4>();
 		cout << " All Ok! Completed." << endl;
 	}
-	// {
-	// 	const STATE K = {13, 2, 5, 10};  // T = 241^4 - 1
-	// 	const STATE initial_state = {1, 1, 0, 0};
-	// 	LFSR g(K);
-	// 	g.set_state(initial_state);
-	// 	cout << "Initial state: ";
-	// 	for (int i=0; i<m; ++i) {
-	// 		cout << g.get_cell(i) << ", ";
-	// 	}
-	// 	cout << endl;
-	// 	cout << "Wait for period calculation..." << endl;
-	// 	auto T = calculate_sawtooth_period(g, 7);
-	// 	cout << " T: " << format_with_commas(T) << endl;
-	// }
+	// Test of state increment
+	{
+		cout << "Wait for state increment test..." << endl;
+		STATE<4> x {};
+		const STATE<4> zero_state {};
+		long long T = 0;
+		const long long T0 = std::pow(19, 4);
+		while (1) {
+			increment_state<19, 4>(x);
+			T++;
+			if (x == zero_state) {
+				break;
+			}
+		}
+		// show_with_thousands_separator(T0);
+		assert(T == T0);
+		cout << " All Ok! Completed." << endl;
+	}
+	// Special test
+	{
+		const STATE<4> K = {4, 2, 2, 6};
+		const int T_sawtooth = 7; // a prime
+		LFSR<19, 4> g(K);
+		STATE<4> initial_state {8, 7, 15, 13}; // special non-zero state
+		g.set_state(initial_state);
+		int i0 = 0;
+		while (1) {
+			auto T = calculate_sawtooth_period(g, T_sawtooth, i0);
+			cout << "T: " << T << "\n";
+			const auto st = g.get_state();
+			for (int i=0; i<4; i++) {
+				cout << st[i] << ", ";
+			}
+			cout << "\n";
+			if (i0 == 0) {
+				break;
+			}
+		}
+	}
+	// Total period test for small p = 11
+	{
+		const int p = 11;
+		const int m = 4;
+		cout << "Wait for total period test..." << endl;	
+		const STATE<m> zero_state {};
+		const long long T0 = std::pow(p, m) - 1;
+		const STATE<m> K = {5, 1, 4, 0}; // p = 11
+		const int init_i = 1;
+		const int T_sawtooth = 7; // a prime: (p^m - 1)  mod T_sawtooth is not zero
+		cout << "K: ";
+		for (int i=0; i<m; i++) {
+			cout << K[i] << ", ";
+		}
+		cout << "\n";
+		LFSR<p, m> g(K);
+		STATE<m> initial_state {}; // any non-zero state
+		increment_state<p, m>(initial_state);
+		long long sum_T = 0;
+		timer.reset();
+		while (1) {
+			g.set_state(initial_state);
+			int i0 = init_i;
+			long long TT = 0;
+			int c = 0;
+			while (1) {
+				auto T = calculate_sawtooth_period(g, T_sawtooth, i0);
+				TT += T;
+				c++;
+				if (i0 == init_i) {
+					break;
+				}
+			}
+			// if (TT !=  (T0*(long long)(T_sawtooth))) {
+			// 	cout << "Abnormal TT: ";
+			// 	show_with_thousands_separator(TT);
+			// 	for (int i=0; i<m; i++) {
+			// 		cout << initial_state[i] << ", ";
+			// 	}
+			// 	cout << ". c: " << c << ", init i: " << init_i << "\n";
+			// }
+			// assert(TT == (T0*(long long)(T_sawtooth)));
+			sum_T += TT;
+			increment_state<p, m>(initial_state);
+			if (initial_state != zero_state) {
+				continue;
+			}
+			break;
+		}
+		auto dt = timer.elapsed_ns();
+		cout << "Sum of T: ";
+		show_with_thousands_separator(sum_T);
+		assert(sum_T == (T0*T0*(long long)(T_sawtooth)) - T0*(long long)(T_sawtooth) + T_sawtooth);
+		cout << " All Ok! Completed. Elapsed: " << dt*1e-9 << " s." << endl;
+	}
 	// LFSR hashes test
 	{
+		cout << "Wait for LFSR hashes benchmark..." << endl;	
 		const int N = 65536*16*16;
 		auto v = std::vector<uint8_t>(N);
 		cout << "Input array of " << N << " bytes is allocated." << endl;
@@ -346,8 +456,10 @@ int main() {
 		cout << " 32-bit hash:  " << std::hex << hash32 << std::dec << "\t\t\t\t\t\tperf: " << perf2 << " MB/s" << endl;
 		cout << " 64-bit hash:  " << std::hex << hash64 << std::dec << "\t\t\t\t\tperf: " << perf3 << " MB/s" << endl;
 		cout << " 128-bit hash: " << std::hex << hash128.first << ":" << hash128.second << std::dec << "\t\tperf: " << perf4 << " MB/s" << endl;
+		cout << " All Ok! Completed." << endl;
 	}
 	{
+		cout << "Wait for LFSR hashes coverage test 1..." << endl;	
 		std::map<lfsr8::u32, int> hashes;
 		for (int i=0; i<256; i++) {
 			const uint8_t x = i;
@@ -361,13 +473,14 @@ int main() {
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256u + 65536u));
+		cout << " All Ok! Completed." << endl;
 	}
 	//
 	{
+		cout << "Wait for LFSR hashes coverage test 2..." << endl;
 		const long N = 1024*8; // the more N is passed, the better the LFSR hash
 		std::vector<uint8_t> v(N);
 		std::map<lfsr8::u32, int> hashes;
-		cout << "N: " << N << ", wait test..." << endl;
 		long s = 0;
 		for (int val=0; val<256; val++) {
 			hashes.clear();
@@ -381,12 +494,9 @@ int main() {
 			s += hashes.size();
 		}
 		assert((N*256 - s) == 0);
-		cout << " => Passed." << endl;
+		cout << " All Ok! Completed." << endl;
 	}
-
-	// return 0;
-
-	// Random generator test
+	// Random generator infinite test
 	lfsr_rng::gens g;
 	GeometricDistribution<int> r(0.3);
 	r.seed();
@@ -415,7 +525,7 @@ int main() {
 	double max_dt = 0;
 	while (true) {
 		cout << endl;
-		STATE st = get_random_u32x4(r);
+		auto st = get_random_u32x4<4>(r);
 		const auto st_c = state_conversion(st);
 		timer.reset();
 		g.seed(st_c);
