@@ -477,22 +477,22 @@ int main() {
 	}
 	{
 		cout << "Wait for LFSR 64-bit hashes coverage test 1.2..." << endl;	
-		std::map<lfsr8::u64, int> hashes;
+		std::set<lfsr8::u64> hashes;
 		for (int i=0; i<256; i++) {
 			const uint8_t x = i;
-			hashes[lfsr_hash::hash64(&x, 1)] = i;
+			hashes.insert( lfsr_hash::hash64((uint8_t*)&x, 1) );
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == 256);
 		for (int i=0; i<256*256; i++) {
 			const lfsr8::u16 x = i;
-			hashes[lfsr_hash::hash64((uint8_t*)&x, 2)] = i;
+			hashes.insert( lfsr_hash::hash64((uint8_t*)&x, 2) );
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256u + 65536u));
 		for (lfsr8::u64 i=0; i<256ull*256ull*256ull; i++) {
 			const lfsr8::u32 x = i;
-			hashes[lfsr_hash::hash64((uint8_t*)&x, 3)] = i;
+			hashes.insert( lfsr_hash::hash64((uint8_t*)&x, 3) );
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256u + 65536u + 256u*256u*256u));
@@ -501,22 +501,22 @@ int main() {
 	//
 	{
 		cout << "Wait for LFSR hashes coverage test 2..." << endl;
-		const long N = 1024*8; // the more N is passed, the better the LFSR hash
+		const long long N = 1024*8; // the more N is passed, the better the LFSR hash
 		std::vector<uint8_t> v(N);
-		std::map<lfsr8::u32, int> hashes;
-		long s = 0;
+		std::set<lfsr8::u32> hashes;
+		long long s = 0;
 		for (int val=0; val<256; val++) {
 			hashes.clear();
 			v.assign(N, (uint8_t)val);
 			assert(v.size() == N);
 			for (int i=1; i<=N; i++) {
-				hashes[lfsr_hash::hash32(v.data(), i)] = i;
+				hashes.insert( lfsr_hash::hash32(v.data(), i) );
 			}
 			// cout << hashes.size() << endl;
 			// assert(hashes.size() > N - 2);
 			s += hashes.size();
 		}
-		assert((N*256 - s) == 0);
+		assert((N*256ll - s) == 0);
 		cout << " All Ok! Completed." << endl;
 	}
 	// Random generator infinite test
