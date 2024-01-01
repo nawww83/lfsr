@@ -459,7 +459,7 @@ int main() {
 		cout << " All Ok! Completed." << endl;
 	}
 	{
-		cout << "Wait for LFSR hashes coverage test 1..." << endl;	
+		cout << "Wait for LFSR 32-bit hashes coverage test 1.1..." << endl;	
 		std::map<lfsr8::u32, int> hashes;
 		for (int i=0; i<256; i++) {
 			const uint8_t x = i;
@@ -473,6 +473,29 @@ int main() {
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256u + 65536u));
+		cout << " All Ok! Completed." << endl;
+	}
+	{
+		cout << "Wait for LFSR 64-bit hashes coverage test 1.2..." << endl;	
+		std::map<lfsr8::u64, int> hashes;
+		for (int i=0; i<256; i++) {
+			const uint8_t x = i;
+			hashes[lfsr_hash::hash64(&x, 1)] = i;
+		}
+		cout << hashes.size() << endl;
+		assert(hashes.size() == 256);
+		for (int i=0; i<256*256; i++) {
+			const lfsr8::u16 x = i;
+			hashes[lfsr_hash::hash64((uint8_t*)&x, 2)] = i;
+		}
+		cout << hashes.size() << endl;
+		assert(hashes.size() == (256u + 65536u));
+		for (lfsr8::u64 i=0; i<256ull*256ull*256ull; i++) {
+			const lfsr8::u32 x = i;
+			hashes[lfsr_hash::hash64((uint8_t*)&x, 3)] = i;
+		}
+		cout << hashes.size() << endl;
+		assert(hashes.size() == (256u + 65536u + 256u*256u*256u));
 		cout << " All Ok! Completed." << endl;
 	}
 	//
