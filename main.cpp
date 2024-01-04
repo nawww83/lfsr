@@ -460,19 +460,33 @@ int main() {
 	}
 	{
 		cout << "Wait for LFSR 32-bit hashes coverage test 1.1..." << endl;	
-		std::map<lfsr8::u32, int> hashes;
+		std::set<lfsr8::u32> hashes;
 		for (int i=0; i<256; i++) {
 			const uint8_t x = i;
-			hashes[lfsr_hash::hash32(&x, 1)] = i;
+			hashes.insert(lfsr_hash::hash32(&x, 1));
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == 256);
 		for (int i=0; i<256*256; i++) {
 			const lfsr8::u16 x = i;
-			hashes[lfsr_hash::hash32((uint8_t*)&x, 2)] = i;
+			hashes.insert(lfsr_hash::hash32((uint8_t*)&x, 2));
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256u + 65536u));
+		for (int i=0; i<256*256; i++) {
+			const lfsr8::u32 x = i;
+			const auto hash = lfsr_hash::hash32((uint8_t*)&x, 3);
+			hashes.insert( hash );
+		}
+		cout << hashes.size() << endl;
+		assert(hashes.size() == (256u + 65536u + 65536u));
+		for (int i=0; i<256*256; i++) {
+			const lfsr8::u32 x = i;
+			const auto hash = lfsr_hash::hash32((uint8_t*)&x, 4);
+			hashes.insert( hash );
+		}
+		cout << hashes.size() << endl;
+		assert(hashes.size() == (256u + 65536u + 65536u + 65536u));
 		cout << " All Ok! Completed." << endl;
 	}
 	{
@@ -495,7 +509,7 @@ int main() {
 			hashes.insert( lfsr_hash::hash64((uint8_t*)&x, 3) );
 		}
 		cout << hashes.size() << endl;
-		assert(hashes.size() == (256u + 65536u + 256u*256u*256u));
+		assert(hashes.size() == (256ull + 65536ull + 256ull*256ull*256ull));
 		cout << " All Ok! Completed." << endl;
 	}
 	//

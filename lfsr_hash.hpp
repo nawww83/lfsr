@@ -62,8 +62,12 @@ public:
                 g_241x4.next(*(u16*)(input + n - 2 - 2*i));
             }
         }
-        if (n > 2) { // to pass 1.2 test, see main.cpp
+        if (n > 2) { // to pass 1.1 and 1.2 tests, see main.cpp
             {
+                g_251x4.next(*(u16*)(input + 1));
+                g_241x4.next(*(u16*)(input + n - 3));
+                g_251x4.next(*(u16*)(input + 1));
+                g_241x4.next(*(u16*)(input + n - 3));
                 g_251x4.next(*(u16*)(input + 1));
                 g_241x4.next(*(u16*)(input + n - 3));
             }
