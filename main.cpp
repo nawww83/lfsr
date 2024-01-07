@@ -473,20 +473,20 @@ int main() {
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256u + 65536u));
-		for (int i=0; i<256*256; i++) {
+		for (int i=0; i<256*256*2; i++) {
 			const lfsr8::u32 x = i;
 			const auto hash = lfsr_hash::hash32((uint8_t*)&x, 3);
 			hashes.insert( hash );
 		}
 		cout << hashes.size() << endl;
-		assert(hashes.size() == (256u + 65536u + 65536u));
+		assert(hashes.size() == (256u + 65536u + 65536u*2));
 		for (int i=0; i<256*256; i++) {
 			const lfsr8::u32 x = i;
 			const auto hash = lfsr_hash::hash32((uint8_t*)&x, 4);
 			hashes.insert( hash );
 		}
 		cout << hashes.size() << endl;
-		assert(hashes.size() == (256u + 65536u + 65536u + 65536u));
+		assert(hashes.size() == (256u + 65536u + 65536u*2 + 65536u));
 		cout << " All Ok! Completed." << endl;
 	}
 	{
@@ -504,12 +504,38 @@ int main() {
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256u + 65536u));
-		for (lfsr8::u64 i=0; i<256ull*256ull*256ull; i++) {
+		for (lfsr8::u32 i=0; i<256ull*256ull*256ull; i++) {
 			const lfsr8::u32 x = i;
 			hashes.insert( lfsr_hash::hash64((uint8_t*)&x, 3) );
+			hashes.insert( lfsr_hash::hash64((uint8_t*)&x, 4) );
 		}
 		cout << hashes.size() << endl;
-		assert(hashes.size() == (256ull + 65536ull + 256ull*256ull*256ull));
+		assert(hashes.size() == (256ull + 65536ull + 2ull*256ull*256ull*256ull));
+		cout << " All Ok! Completed." << endl;
+	}
+	{
+		cout << "Wait for LFSR 128-bit hashes coverage test 1.3..." << endl;	
+		std::set<std::pair<lfsr8::u64, lfsr8::u64>> hashes;
+		for (int i=0; i<256; i++) {
+			const uint8_t x = i;
+			hashes.insert( lfsr_hash::hash128((uint8_t*)&x, 1) );
+		}
+		cout << hashes.size() << endl;
+		assert(hashes.size() == 256);
+		for (int i=0; i<256*256; i++) {
+			const lfsr8::u32 x = i;
+			hashes.insert( lfsr_hash::hash128((uint8_t*)&x, 2) );
+		}
+		cout << hashes.size() << endl;
+		assert(hashes.size() == (256u + 65536u));
+		for (lfsr8::u64 i=0; i<256ull*256ull; i++) {
+			const auto x = std::array<lfsr8::u64, 32> {i};
+			for (int i=3; i<=256; ++i) {
+				hashes.insert( lfsr_hash::hash128((uint8_t*)&x, i) );
+			}
+		}
+		cout << hashes.size() << endl;
+		assert(hashes.size() == (256ull + 65536ull + (256ull - 3ull + 1ull)*65536ull));
 		cout << " All Ok! Completed." << endl;
 	}
 	//
