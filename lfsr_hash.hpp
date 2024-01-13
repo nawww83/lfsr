@@ -1,9 +1,7 @@
 #pragma once
 
 #include "lfsr.hpp"
-
 #include <utility>
-
 
 namespace lfsr_hash {
 
@@ -54,28 +52,8 @@ public:
             g_241x4.next(S.s1);
         }
     }
-    void process_input(const uint8_t* input, int n) {
-        assert(n > 0);
-        if (n > 1) {
-            for (int i=0; i<n/2; ++i) {
-                g_251x4.next(*(u16*)(input + 2*i));
-                g_241x4.next(*(u16*)(input + n - 2 - 2*i));
-            }
-        }
-        if (n > 2) { // to pass 1.1 and 1.2 tests, see main.cpp
-            {
-                g_251x4.next(*(u16*)(input + 1));
-                g_241x4.next(*(u16*)(input + n - 3));
-                g_251x4.next(*(u16*)(input + 1));
-                g_241x4.next(*(u16*)(input + n - 3));
-                g_251x4.next(*(u16*)(input + 1));
-                g_241x4.next(*(u16*)(input + n - 3));
-            }
-        }
-        u16 x = (u16)input[0] | ((u16)(input[0]) << 8);
-        g_251x4.next(x);
-        g_241x4.next(x);
-    }
+
+    void process_input(const uint8_t* input, size_t n);
 
     auto form_hash32() {
         auto st1 = g_251x4.get_state();
@@ -93,8 +71,8 @@ public:
     }
 };
 
-u32 hash32(const uint8_t* input, int n);
-u64 hash64(const uint8_t* input, int n);
-u128 hash128(const uint8_t* input, int n);
+u32 hash32(const uint8_t* input, size_t n);
+u64 hash64(const uint8_t* input, size_t n);
+u128 hash128(const uint8_t* input, size_t n);
 
 }

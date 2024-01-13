@@ -14,6 +14,7 @@
 #include "lfsr_hash.hpp"
 #include "random_gen.hpp"
 #include "timer.hpp"
+#include "io_utils.hpp"
 
 
 template <int p, int m>
@@ -433,7 +434,7 @@ int main() {
 	// LFSR hashes test
 	{
 		cout << "Wait for LFSR hashes benchmark..." << endl;	
-		const int N = 65536*16*16;
+		const size_t N = 65536*16*16;
 		auto v = std::vector<uint8_t>(N);
 		cout << "Input array of " << N << " bytes is allocated." << endl;
 		
@@ -473,16 +474,20 @@ int main() {
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256u + 65536u));
-		for (int i=0; i<256*256*2; i++) {
+		for (size_t i=0; i<256*256*2; i++) {
 			const lfsr8::u32 x = i;
-			const auto hash = lfsr_hash::hash32((uint8_t*)&x, 3);
+			uint8_t b[4];
+			io_u::io.copy_to_mem_32(x, b, 4); // LE guaranteed
+			const auto hash = lfsr_hash::hash32(b, 3);
 			hashes.insert( hash );
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256u + 65536u + 65536u*2));
-		for (int i=0; i<256*256; i++) {
+		for (size_t i=0; i<256*256; i++) {
 			const lfsr8::u32 x = i;
-			const auto hash = lfsr_hash::hash32((uint8_t*)&x, 4);
+			uint8_t b[4];
+			io_u::io.copy_to_mem_32(x, b, 4); // LE guaranteed
+			const auto hash = lfsr_hash::hash32(b, 4);
 			hashes.insert( hash );
 		}
 		cout << hashes.size() << endl;
@@ -498,16 +503,18 @@ int main() {
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == 256);
-		for (int i=0; i<256*256; i++) {
+		for (size_t i=0; i<256*256; i++) {
 			const lfsr8::u16 x = i;
 			hashes.insert( lfsr_hash::hash64((uint8_t*)&x, 2) );
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256u + 65536u));
-		for (lfsr8::u32 i=0; i<256ull*256ull*256ull; i++) {
+		for (size_t i=0; i<256ull*256ull*256ull; i++) {
 			const lfsr8::u32 x = i;
-			hashes.insert( lfsr_hash::hash64((uint8_t*)&x, 3) );
-			hashes.insert( lfsr_hash::hash64((uint8_t*)&x, 4) );
+			uint8_t b[4];
+			io_u::io.copy_to_mem_32(x, b, 4); // LE guaranteed
+			hashes.insert( lfsr_hash::hash64(b, 3) );
+			hashes.insert( lfsr_hash::hash64(b, 4) );
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256ull + 65536ull + 2ull*256ull*256ull*256ull));
@@ -522,13 +529,13 @@ int main() {
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == 256);
-		for (int i=0; i<256*256; i++) {
-			const lfsr8::u32 x = i;
+		for (size_t i=0; i<256*256; i++) {
+			const lfsr8::u16 x = i;
 			hashes.insert( lfsr_hash::hash128((uint8_t*)&x, 2) );
 		}
 		cout << hashes.size() << endl;
 		assert(hashes.size() == (256u + 65536u));
-		for (lfsr8::u64 i=0; i<256ull*256ull; i++) {
+		for (size_t i=0; i<256ull*256ull; i++) {
 			const auto x = std::array<lfsr8::u64, 32> {i};
 			for (int i=3; i<=256; ++i) {
 				hashes.insert( lfsr_hash::hash128((uint8_t*)&x, i) );
@@ -541,20 +548,20 @@ int main() {
 	//
 	{
 		cout << "Wait for LFSR hashes coverage test 2..." << endl;
-		const long long N = 8192;
+		const size_t N = 8192;
 		std::vector<uint8_t> v(N);
 		std::set<lfsr8::u32> hashes;
-		long long s = 0;
+		size_t s = 0;
 		for (int val=0; val<256; val++) {
 			v.assign(N, (uint8_t)val);
 			assert(v.size() == N);
-			for (int i=1; i<=N; i++) {
+			for (size_t i=1; i<=N; i++) {
 				hashes.insert( lfsr_hash::hash32(v.data(), i) );
 			}
 		}
 		s += hashes.size();
 		cout << " s = " << s << endl;
-		// assert((N*256ll - s) == 0);
+		// assert(N*256ull == s);
 		assert(s >= 2096661);
 		// when N = 8192 we can see the LFSR hash is comparable with SHA-512 by the size of hashes set 's = hashes.size()'
 		// sha-512 (but it's low 32-bit) has s = 2'096'661
@@ -655,10 +662,10 @@ int main() {
 		// };
 		// cout << "First 32 16-bit random numbers: ";
 		// pretty_print(32);
-		auto measure_time = [&g, ave_perf, max_perf](int n) {
+		auto measure_time = [&g, ave_perf, max_perf](size_t n) {
 			timer.reset();
 			lfsr8::u64 h = 0;
-			for (int i=0; i<n; ++i) {
+			for (size_t i=0; i<n; ++i) {
 				h ^= g.next_u64();
 				// h ^= g.get_u16();
 			}
