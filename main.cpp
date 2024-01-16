@@ -79,7 +79,7 @@ void show_with_thousands_separator(std::integral auto x) {
 }
 
 static std::random_device rd;
-
+static timer_n::Timer timer;
 
 template <typename T>
 class GeometricDistribution {
@@ -291,10 +291,10 @@ void test_next_back() {
 }
 
 
-static timer_n::Timer timer;
-
 int main() {
 	using namespace std;
+
+	io_u::io_utils io;
 	
 	// static_assert(is_prime<p>());
 	/*
@@ -477,7 +477,7 @@ int main() {
 		for (size_t i=0; i<256*256*2; i++) {
 			const lfsr8::u32 x = i;
 			uint8_t b[4];
-			io_u::io.copy_to_mem_32(x, b, 4); // LE guaranteed
+			io.copy_to_mem_32(x, b, 4); // LE guaranteed
 			const auto hash = lfsr_hash::hash32(b, 3);
 			hashes.insert( hash );
 		}
@@ -486,7 +486,7 @@ int main() {
 		for (size_t i=0; i<256*256; i++) {
 			const lfsr8::u32 x = i;
 			uint8_t b[4];
-			io_u::io.copy_to_mem_32(x, b, 4); // LE guaranteed
+			io.copy_to_mem_32(x, b, 4); // LE guaranteed
 			const auto hash = lfsr_hash::hash32(b, 4);
 			hashes.insert( hash );
 		}
@@ -512,7 +512,7 @@ int main() {
 		for (size_t i=0; i<256ull*256ull*256ull; i++) {
 			const lfsr8::u32 x = i;
 			uint8_t b[4];
-			io_u::io.copy_to_mem_32(x, b, 4); // LE guaranteed
+			io.copy_to_mem_32(x, b, 4); // LE guaranteed
 			hashes.insert( lfsr_hash::hash64(b, 3) );
 			hashes.insert( lfsr_hash::hash64(b, 4) );
 		}

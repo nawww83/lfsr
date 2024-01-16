@@ -1,8 +1,8 @@
 #include "lfsr_hash.hpp"
 #include "io_utils.hpp"
 
-static lfsr_hash::gens g;
-
+lfsr_hash::gens g;
+io_u::io_utils io;
 
 void lfsr_hash::gens::process_input(const uint8_t* input, size_t n) {
     assert(n > 0);
@@ -10,8 +10,8 @@ void lfsr_hash::gens::process_input(const uint8_t* input, size_t n) {
         for (size_t i=0; i<n/2; ++i) {
             u16 tmp1;
             u16 tmp2;
-            io_u::io.read_mem_16(tmp1, input + 2*i, sizeof(u16));
-            io_u::io.read_mem_16(tmp2, input + n - 2 - 2*i, sizeof(u16));
+            io.read_mem_16(tmp1, input + 2*i, sizeof(u16));
+            io.read_mem_16(tmp2, input + n - 2 - 2*i, sizeof(u16));
             // g_251x4.next(*(u16*)(input + 2*i));
             // g_241x4.next(*(u16*)(input + n - 2 - 2*i));
             g_251x4.next(tmp1);
@@ -22,8 +22,8 @@ void lfsr_hash::gens::process_input(const uint8_t* input, size_t n) {
         {
             u16 tmp1;
             u16 tmp2;
-            io_u::io.read_mem_16(tmp1, input + 1, sizeof(u16));
-            io_u::io.read_mem_16(tmp2, input + n - 3, sizeof(u16));
+            io.read_mem_16(tmp1, input + 1, sizeof(u16));
+            io.read_mem_16(tmp2, input + n - 3, sizeof(u16));
             // g_251x4.next(*(u16*)(input + 1));
             // g_241x4.next(*(u16*)(input + n - 3));
             // g_251x4.next(*(u16*)(input + 1));
