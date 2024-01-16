@@ -35,8 +35,6 @@ static_assert(S2.q >= 6*4); // long distance, m = 4
 static_assert(S3.q >= 6*4);
 static_assert(S4.q >= 6*4);
 
-namespace {
-
 struct gens {
     LFSR251x4 g_251x4;
     LFSR241x4 g_241x4;
@@ -71,7 +69,6 @@ public:
         return hash;
     }
 };
-} // namespace
 
 u32 hash32(const uint8_t* input, size_t n);
 u64 hash64(const uint8_t* input, size_t n);

@@ -1,8 +1,10 @@
 #include "lfsr_hash.hpp"
 #include "io_utils.hpp"
 
-lfsr_hash::gens g;
-io_u::io_utils io;
+namespace {
+    io_u::io_utils io;
+    lfsr_hash::gens g;
+}
 
 void lfsr_hash::gens::process_input(const uint8_t* input, size_t n) {
     assert(n > 0);

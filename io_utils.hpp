@@ -6,7 +6,6 @@
 #include <cstring>
 
 namespace io_u {
-namespace {
 
 struct io_utils {
 
@@ -92,5 +91,4 @@ void read_mem_32(uint32_t& x, const uint8_t* buffer, size_t size) {
 }
 }; // struct io_utils
 
-} // namespace
 } // io_u
