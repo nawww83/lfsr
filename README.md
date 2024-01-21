@@ -74,12 +74,12 @@ Bit scaling of LFSR hash is done by adding **salt**.
 We have two LFSR pairs, one has $p=17$, another has $p=19$. For example, lets consider the first pair. We can control an LFSR generator by some **sawtooth generator**:
 $$i = (i + 1) \mod q.$$
 
-Here $i$ - output of sawtooth generator with the period $q < p$. We start with some $i = i_0$ - the initial sawtooth state. It is better to choose $q$ such the LFSR period $T = p^m - 1$ is not divisible by the sawtooth generator period $q$. In this case we will visit all possible $i$ when LFSR has some **fixed** non-zero state, and the total period will be maximal and equal to $(p^m-1)*q$.
+Here $i$ - output of sawtooth generator with the period $q < p$. We start with some $i = i_0$ - the initial sawtooth state. It is better to choose $q$ such the LFSR period $T = p^m - 1$ is not divisible by the sawtooth generator period $q$. In this case we will visit all possible $i$ when LFSR has some **fixed** non-zero state, and the total period will be maximal and equal to $(p^m-1) \cdot q$.
 
 Observations have shown when we control LFSR by sawtooth generator, we will have some sequence of LFSR periods $T_j$, $j = [0..q-1]$ such the sum of the periods is equal to the total period. The interesting property is the inner periods $T_i$ are like some random numbers, so we can reset sawtooth generator after the **fixed** LFSR state has been acheived $q-1$ times exactly, not $q$. In this case each sawtooth-controlled LFSR will have the period which is equal to the sum of $T_j$, $j=[0..q-2]$. This period is slightly smaller than $(p^m-1)*q$. Each LFSR will have their own period; frequently, that $4$ periods has unit (or small) Greatest Common Divisor and, therefore, the total period will be equal to the multiplication of all periods. It is possible to choose the sawtooth initial states quickly, such the GCD will be equal to $1$.
 
 At each step (work cycle), the states of all LFSR generators are XORed and form $16$-bit output. After $4$ steps a $64$-bit number is formed as actual Random Generator output.
 
-The total period of proposed sawtooth-controlled LFSR Random Generator is $77..79$ bits approximately (the period is a random value with relatively small variance).
+The total period of proposed sawtooth-controlled LFSR Random Generator is $77...79$ bits approximately (the period is a random value with relatively small variance).
 
 The average chi-square value is $255$ as expected.
