@@ -295,6 +295,11 @@ int main() {
 	using namespace std;
 
 	io_u::io_utils io;
+
+	cout << "Welcome!\n";
+    cout << "Endianess: " << (io.is_little_endian() ? "LE\n" : "Not LE\n");
+    cout << "Endianess: " << (io.is_big_endian() ? "BE\n" : "Not BE\n");
+    assert( io.is_little_endian() ^ io.is_big_endian());
 	
 	// static_assert(is_prime<p>());
 	/*
@@ -365,12 +370,14 @@ int main() {
 		int i0 = 0;
 		while (1) {
 			auto T = calculate_sawtooth_period(g, T_sawtooth, i0);
-			cout << "T: " << T << "\n";
+			(void)T;
+			// cout << "T: " << T << "\n";
 			const auto st = g.get_state();
-			for (int i=0; i<4; i++) {
-				cout << st[i] << ", ";
-			}
-			cout << "\n";
+			// for (int i=0; i<4; i++) {
+				// cout << st[i] << ", ";
+			// }
+			// cout << "\n";
+			assert(initial_state == st);
 			if (i0 == 0) {
 				break;
 			}
@@ -386,11 +393,11 @@ int main() {
 		const STATE<m> K = {5, 1, 4, 0}; // p = 11
 		const int init_i = 1;
 		const int T_sawtooth = 7; // a prime: (p^m - 1)  mod T_sawtooth is not zero
-		cout << "K: ";
-		for (int i=0; i<m; i++) {
-			cout << K[i] << ", ";
-		}
-		cout << "\n";
+		// cout << "K: ";
+		// for (int i=0; i<m; i++) {
+			// cout << K[i] << ", ";
+		// }
+		// cout << "\n";
 		LFSR<p, m> g(K);
 		STATE<m> initial_state {}; // any non-zero state
 		increment_state<p, m>(initial_state);
