@@ -70,7 +70,7 @@ Bit scaling of LFSR hash is done by adding **salt**.
 
 ## Random number generation principles
 We have two LFSR pairs, one has $p=17$, another has $p=19$. For example, lets consider the first pair. We can control an LFSR generator by some sawtooth generator:
-$$ i = (i + 1) mod q.$$
+$$i = (i + 1) \mod q.$$
 
 Here $i$ - output of sawtooth generator with the period $q < p$. We start with some $i = i0$ - the initial sawtooth state. It is better to choose $q$ such the LFSR period $T = p^m - 1$ is not divisible by the sawtooth generator period $q$. In this case we will visit all possible $i$ when LFSR has some **fixed** non-zero state, and the total period will be maximal and equal to $(p^m-1)*q$.
 
