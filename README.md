@@ -3,8 +3,11 @@ LFSR and its cryptographic applications.
 
 Prime number $p$ and register length $m$ are used.
 
-You can get 32, 64 and 128-bit **cryptographic** hashes with **salt**. Also, you can add 256-bit hash etc using similar extention approach as you need.
+1. You can get 32, 64 and 128-bit **cryptographic** hashes with **salt**. Also, you can add 256-bit hash etc using similar extention approach as you need. It was estimated the proposed LFSR hash is comparable to SHA-512.
+
 Additionally, src code contains some functions to find vectors of coefficients $K$ that provide periods $T_0 = {p}^{m} - 1$ and $T_1 = {p}^{m-1} - 1$.
+
+2. You can generate 64-bit **cryptographic** random numbers based on two LFSR pairs (**total** length $4m$) with small primes $p$: 17, 19, and sawtooth modulation of that pairs with small periods: 7, 11.
 
 ## Build
 g++ main.cpp lfsr_hash.cpp -std=c++20 -msse4.1 -O3 -o lfsr
@@ -13,6 +16,9 @@ g++ main.cpp lfsr_hash.cpp -std=c++20 -msse4.1 -O3 -o lfsr
 
 ## Hash performance
 Approx. 210 MB/s @ Intel i7-8565U CPU 4.2GHz, GCC 11.4
+
+## Random number generation performance
+Approx. 120 MB/s @ Intel i7-8565U CPU 4.2GHz, GCC 11.4
 
 ## LFSR hash principles
 The base unit for LFSR hash is a LFSR register, which can be interpreted as a Finite State Machine (Moore machine to be precise).
@@ -61,3 +67,13 @@ We use two LFSR pairs of length $m=4$, and primes $p=251$ and $p=241$. Final sta
 To improve the crypto resilience, the first LFSR pair is driven by the original input, but the second one is driven by reversed input vector. Also, the **salt** is added before/after input loop.
 
 Bit scaling of LFSR hash is done by adding **salt**.
+
+## Random number generation principles
+We have two LFSR pairs, one has $p=17$, another has $p=19$. For example, lets consider the first pair. We can control an LFSR generator by some sawtooth generator:
+$$ i = (i + 1) mod q.$$
+
+Here i - output of sawtooth generator with the period $q<p$. We start with some $i = i0$ - the initial sawtooth state. It is better to choose $q$ such the LFSR period $T = p^m - 1$ is not divisible by the sawtooth generator period $q$. In this case we will visit all possible $i$ when LFSR has some **fixed** non-zero state, and the total period will be maximal and equal to $(p^m-1)*q$.
+
+Observations have shown that when we control LFSR by sawtooth generator we will have some sequence of LFSR periods $T[j]$, $j = [0..q-1]$ such that the sum of that periods is equal to the total period. The interesting property is the inner periods $T[i]$ are like some random numbers, so we can reset sawtooth generator after the fixed LFSR state was acheived $q-1$ times exactly, not $q$. In this case each sawtooth-controlled LFSR will have the period which is equal to the sum of $T[j]$, $j=[0..q-2]$. This period is slightly smaller than $(p^m-1)*q$. Each LFSR will have their own period; frequently, that periods have unit (or small) Greatest Common Divisor and, therefore, the total period will be equal to the multiplication of all periods. It is possible to choose the sawtooth initial states such the GCD will be equal to $1$.
+
+At each step, the states of all LFSR generators are XORed and form $16$-bit output. After $4$ steps a $64$-bit number is formed as actual Random Generator output.
