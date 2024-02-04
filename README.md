@@ -71,15 +71,21 @@ To improve the crypto resilience, the first LFSR pair is driven by the original 
 Bit scaling of LFSR hash is done by adding **salt**.
 
 ## Random number generation principles
-We have two LFSR pairs, one has $p=17$, another has $p=19$. For example, lets consider the first pair. We can control an LFSR generator by some **sawtooth generator**:
+We have two LFSR pairs, one has $p=17$, the other has $p=19$. For example, lets consider the first pair. We can control the LFSR generator using a **sawtooth generator**:
 $$i = (i + 1) \mod q.$$
 
-Here $i$ - output of sawtooth generator with the period $q < p$. We start with some $i = i_0$ - the initial sawtooth state. It is better to choose $q$ such the LFSR period $T = p^m - 1$ is not divisible by the sawtooth generator period $q$. In this case we will visit all possible $i$ when LFSR has some **fixed** non-zero state, and the total period will be maximal and equal to $(p^m-1) \cdot q$.
+Here $i$ - the output of the sawtooth generator with period $q < p$. We start generation from some initial value $i = i_0$. It is better to choose the sawtooth period $q$ so that the LFSR period $T = p^m - 1$ is not divided by that period. In this case we will visit all possible $i$ when the **fixed non-zero** LFSR state is repeated, while the total period of the system will be maximum and equal to $(p^m-1) \cdot q$.
 
-Observations have shown when we control LFSR by sawtooth generator, we will have some sequence of LFSR periods $T_j$, $j = [0..q-1]$ such the sum of the periods is equal to the total period. The interesting property is the inner periods $T_i$ are like some random numbers, so we can reset sawtooth generator after the **fixed** LFSR state has been acheived $q-1$ times exactly, not $q$. In this case each sawtooth-controlled LFSR will have the period which is equal to the sum of $T_j$, $j=[0..q-2]$. This period is slightly smaller than $(p^m-1) \cdot q$. Each LFSR will have their own period; frequently, that $4$ periods has unit (or small) Greatest Common Divisor and, therefore, the total period will be equal to the multiplication of all periods. It is possible to choose the sawtooth initial states quickly, such the GCD will be equal to $1$.
+Observations have shown that driving the LFSR generator by a proper sawtooth generator results in a sequence of $q$ LFSR **pseudo-random periods** $T_j$ such that their sum is equal to the total period of the system:
+$${T}_{total} = \sum\_{j=1}^{q} T_j = (p^m-1) \cdot q.$$
 
-At each step (work cycle), the states of all LFSR generators are XORed and form $16$-bit output. After $4$ steps a $64$-bit number is formed as actual Random Generator output.
+This allows the saw generator to be reset when $q-1$ periods are reached, skipping the last one. Thus, we will obtain a certain random period of the "LFSR + Sawtooth" system under consideration, slightly less than the maximum:
+$${T}_{sub} =  = \sum\_{j=1}^{q-1} T_j < (p^m-1) \cdot q.$$
 
-The total period of proposed sawtooth-controlled LFSR Random Generator is $77...79$ bits approximately (the period is a random value with relatively small variance).
+This will make it possible to combine several such subsystems into a common system with an increasing period. The GCD of these periods will most likely be small or even equal to one. If necessary, you can select the initial state of the sawtooth generator so as to achieve a unit GCD.
 
-The average chi-square value is $255$ as expected.
+The $64$-bit generator output is generated after $4$ work cycles, accumulating 16-bit states obtained after XORing the cells of all LFSR generators.
+
+The total period of the proposed LFSR generator controlled by the sawtooth generator is $77...79$ bits: the period is a random value with relatively small variance.
+
+The average byte-wise chi-square value is $256$ as expected.
