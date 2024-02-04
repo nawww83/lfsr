@@ -79,12 +79,12 @@ Here $i$ - the output of the sawtooth generator with period $q < p$. We start ge
 Observations have shown that driving the LFSR generator by a proper sawtooth generator results in a sequence of $q$ LFSR **pseudo-random periods** $T_j$ such that their sum is equal to the total period of the system:
 $${T}_{total} = \sum\_{j=1}^{q} T_j = (p^m-1) \cdot q.$$
 
-This allows the saw generator to be reset when $q-1$ periods are reached, skipping the last one. Thus, we will obtain a certain random period of the "LFSR + Sawtooth" system under consideration, slightly less than the maximum:
-$${T}_{sub} =  = \sum\_{j=1}^{q-1} T_j < (p^m-1) \cdot q.$$
+This allows the sawtooth generator to be reset when $q-1$ periods are reached, skipping the last one. Thus, we will obtain a certain random period of the "LFSR + Sawtooth" system under consideration, slightly less than the maximum:
+$${T}_{sub} = \sum\_{j=1}^{q-1} T_j < (p^m-1) \cdot q.$$
 
 This will make it possible to combine several such subsystems into a common system with an increasing period. The GCD of these periods will most likely be small or even equal to one. If necessary, you can select the initial state of the sawtooth generator so as to achieve a unit GCD.
 
-The $64$-bit generator output is generated after $4$ work cycles, accumulating 16-bit states obtained after XORing the cells of all LFSR generators.
+The $64$-bit generator output is generated after $4$ work cycles, accumulating $16$-bit states obtained after XORing the cells of all LFSR generators.
 
 The total period of the proposed LFSR generator controlled by the sawtooth generator is $77...79$ bits: the period is a random value with relatively small variance.
 
