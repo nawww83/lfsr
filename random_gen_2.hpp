@@ -79,7 +79,7 @@ public:
         gp2.set_state(st);
         gp3.set_state(st);
         gp4.set_state(st);
-        x1 = x2 = x3 = x4 = 0;
+        x1 = x2 = x3 = x4 = 1; // to exclude zero-loop
         for (int i=0; i<3*m; ++i) { // saturation
             gp1.next(x2);
             gp2.next(x1);
