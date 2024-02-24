@@ -13,6 +13,7 @@
 
 #include "lfsr_hash.hpp"
 #include "random_gen.hpp"
+#include "random_gen_2.hpp"
 #include "timer.hpp"
 #include "io_utils.hpp"
 
@@ -438,6 +439,7 @@ int main() {
 		assert(sum_T == (T0*T0*(long long)(T_sawtooth)) - T0*(long long)(T_sawtooth) + T_sawtooth);
 		cout << " All Ok! Completed. Elapsed: " << dt*1e-9 << " s." << endl;
 	}
+	/*
 	// LFSR hashes test
 	{
 		cout << "Wait for LFSR hashes benchmark..." << endl;	
@@ -575,27 +577,39 @@ int main() {
 		// Current LFSR has s = 2'096'662 (~comparable)
 		cout << " All Ok! Completed." << endl;
 	}
+	*/
 	// Random generator infinite test
-	lfsr_rng::gens g;
+	#define gen_version 2
+	 // Version: 1 or 2. 1 => ~77 bit, 2 => ~64 bit
+	#if gen_version == 1
+		lfsr_rng::gens g;
+	#endif
+	#if gen_version == 2
+		lfsr_rng_2::gens g;
+	#endif
 	GeometricDistribution<int> r(0.3);
 	r.seed();
-	auto state_conversion = [](lfsr8::u32x4 st) {
-		lfsr8::u16x8 st1;
-		st1[0] = st[0];
-		st1[1] = st[0] >> 16;
-		st1[2] = st[1];
-		st1[3] = st[1] >> 16;
+	#if gen_version == 1
+		auto state_conversion = [](lfsr8::u32x4 st) {
+			lfsr8::u16x8 st1;
+			st1[0] = st[0];
+			st1[1] = st[0] >> 16;
+			st1[2] = st[1];
+			st1[3] = st[1] >> 16;
 
-		st1[4] = st[2];
-		st1[5] = st[2] >> 16;
-		st1[6] = st[3];
-		st1[7] = st[3] >> 16;
+			st1[4] = st[2];
+			st1[5] = st[2] >> 16;
+			st1[6] = st[3];
+			st1[7] = st[3] >> 16;
 
-		return st1;
-	};
+			return st1;
+		};
+	#endif
 	//
 	long long c = 0;
-	long long skeep = 0;
+	#if gen_version == 1
+		long long skeep = 0;
+	#endif
 	double ave_dt = 0;
 	double ave_perf = 0;
 	double max_perf = 0;
@@ -605,29 +619,37 @@ int main() {
 	while (true) {
 		cout << endl;
 		auto st = get_random_u32x4<4>(r);
-		const auto st_c = state_conversion(st);
 		timer.reset();
-		g.seed(st_c);
+		#if gen_version == 1
+			const auto st_c = state_conversion(st);
+			g.seed(st_c);
+		#endif
+		#if gen_version == 2
+			g.seed(st);
+		#endif
 		double dt = timer.elapsed_ns();
 		//
-		if (! g.is_succes()) {
-			skeep++; // it is better to get zero skeeps
-			std::cout << "Skipped! " << std::endl;
-			continue;
-		}
+		#if gen_version == 1
+			if (! g.is_succes()) {
+				skeep++; // it is better to achieve zero skeeps
+				std::cout << "Skipped! " << std::endl;
+				continue;
+			}
+		#endif
 		//
 		c++;
 		ave_dt += (dt - ave_dt) / (1.*c);
 		ave_var_dt += (dt*dt - ave_var_dt) / (1.*c);
 		min_dt = std::min(min_dt, dt);
 		max_dt = std::max(max_dt, dt);
-		const double T01 = std::pow(lfsr_rng::p1, 4) - 1;
-		const double T02 = std::pow(lfsr_rng::p2, 4) - 1;
-		const double T_bits = std::log2(g.T[4]) + std::log2(g.T[5]) + std::log2(g.T[6]) + std::log2(g.T[7]);
-		cout << "Counter: " << c << ", skeep: " << skeep << ", ave dt: " << ave_dt*1e-9 << " s, rms dt: " << std::sqrt(ave_var_dt - ave_dt*ave_dt)*1e-9 <<
-			 ", max dt: " << max_dt*1.e-09 << ", min dt: " << min_dt*1e-9 << "; " << g.ii01 << " : " << g.ii02 << " : " << 
-			 g.T[4]/T01 << " : " << g.T[5]/T01 << " : " << g.T[6]/T02 << " : " << g.T[7]/T02 << ", T bits: " << T_bits << endl;
-		
+		#if gen_version == 1
+			const double T01 = std::pow(lfsr_rng::p1, 4) - 1;
+			const double T02 = std::pow(lfsr_rng::p2, 4) - 1;
+			const double T_bits = std::log2(g.T[4]) + std::log2(g.T[5]) + std::log2(g.T[6]) + std::log2(g.T[7]);
+			cout << "Counter: " << c << ", skeep: " << skeep << ", ave dt: " << ave_dt*1e-9 << " s, rms dt: " << std::sqrt(ave_var_dt - ave_dt*ave_dt)*1e-9 <<
+				", max dt: " << max_dt*1.e-09 << ", min dt: " << min_dt*1e-9 << "; " << g.ii01 << " : " << g.ii02 << " : " << 
+				g.T[4]/T01 << " : " << g.T[5]/T01 << " : " << g.T[6]/T02 << " : " << g.T[7]/T02 << ", T bits: " << T_bits << endl;
+		#endif
 		// Byte-wise chi-square test
 		{
 			static std::vector<double> frequencies(256);
