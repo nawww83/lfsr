@@ -63,8 +63,16 @@ public:
         }
         gp1.set_state(tmp1);
         gp2.set_state(tmp2);
-        u16 i1 = 1;
-        u16 i2 = 1;
+        u16 h1 = 1;
+        for (const auto& el : tmp1) {
+            h1 ^= el;
+        }
+        u16 h2 = 2;
+        for (const auto& el : tmp2) {
+            h2 ^= el;
+        }
+        u16 i1 = h1;
+        u16 i2 = h2;
         for (int i=0; i<int(primes[0])*int(primes[1]); ++i) { // saturate LFSRs
             gp1.next(i1);
             gp2.next(i2);
