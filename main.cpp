@@ -579,7 +579,7 @@ int main() {
 	}
 	*/
 	// Random generator infinite test
-	#define gen_version 2
+	#define gen_version 1
 	 // Version: 1 or 2. 1 => ~77 bit, 2 => ~64 bit
 	#if gen_version == 1
 		lfsr_rng::gens g;

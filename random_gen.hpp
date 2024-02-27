@@ -53,8 +53,16 @@ public:
         return (is_finded != 0);
     }
     void seed(STATE st) {
-        gp1.set_state(st);
-        gp2.set_state(st);
+        STATE tmp1 = st;
+        STATE tmp2 = st;
+        for (auto& el : tmp1) {
+            el %= 16;
+        }
+        for (auto& el : tmp2) {
+            el >>= 4;
+        }
+        gp1.set_state(tmp1);
+        gp2.set_state(tmp2);
         u16 i1 = 1;
         u16 i2 = 1;
         for (int i=0; i<int(primes[0])*int(primes[1]); ++i) { // saturate LFSRs
