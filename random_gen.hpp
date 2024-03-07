@@ -1,5 +1,8 @@
 #pragma once
 
+/*
+Random numbers generator with ~77 bit period.
+*/
 
 #include "lfsr.hpp"
 

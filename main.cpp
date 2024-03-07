@@ -14,6 +14,7 @@
 #include "lfsr_hash.hpp"
 #include "random_gen.hpp"
 #include "random_gen_2.hpp"
+#include "random_gen_3.hpp"
 #include "timer.hpp"
 #include "io_utils.hpp"
 
@@ -301,9 +302,10 @@ int main() {
     cout << "Endianess: " << (io.is_little_endian() ? "LE\n" : "Not LE\n");
     cout << "Endianess: " << (io.is_big_endian() ? "BE\n" : "Not BE\n");
     assert( io.is_little_endian() ^ io.is_big_endian());
-	
-	// static_assert(is_prime<p>());
 	/*
+	// static_assert(is_prime<p>());
+	constexpr int p = 13;
+	constexpr int m = 4;
 	cout << "LFSR with modulo p: " << p << ", length m: " << m << endl;
 	{
 		cout << "Wait for maximal period T0 = p^m - 1 polynomial look up..." << endl;
@@ -319,6 +321,7 @@ int main() {
 		cout << " Period T0: ";
 		show_with_thousands_separator(T);
 	}
+	return 0;
 	*/
 	//
 	/*
@@ -579,7 +582,7 @@ int main() {
 	}
 	*/
 	// Random generator infinite test
-	#define gen_version 1
+	#define gen_version 3
 	 // Version: 1 or 2. 1 => ~77 bit, 2 => ~64 bit
 	#if gen_version == 1
 		lfsr_rng::gens g;
@@ -587,9 +590,12 @@ int main() {
 	#if gen_version == 2
 		lfsr_rng_2::gens g;
 	#endif
+	#if gen_version == 3
+		lfsr_rng_3::gens g;
+	#endif
 	GeometricDistribution<int> r(0.3);
 	r.seed();
-	#if gen_version == 1
+	#if gen_version == 1 || gen_version == 3
 		auto state_conversion = [](lfsr8::u32x4 st) {
 			lfsr8::u16x8 st1;
 			st1[0] = st[0];
@@ -607,7 +613,7 @@ int main() {
 	#endif
 	//
 	long long c = 0;
-	#if gen_version == 1
+	#if gen_version == 1 || gen_version == 3
 		long long skeep = 0;
 	#endif
 	double ave_dt = 0;
@@ -620,7 +626,7 @@ int main() {
 		cout << endl;
 		auto st = get_random_u32x4<4>(r);
 		timer.reset();
-		#if gen_version == 1
+		#if gen_version == 1 || gen_version == 3
 			const auto st_c = state_conversion(st);
 			g.seed(st_c);
 		#endif
@@ -629,7 +635,7 @@ int main() {
 		#endif
 		double dt = timer.elapsed_ns();
 		//
-		#if gen_version == 1
+		#if gen_version == 1 || gen_version == 3
 			if (! g.is_succes()) {
 				skeep++; // it is better to achieve zero skeeps
 				std::cout << "Skipped! " << std::endl;
@@ -649,6 +655,20 @@ int main() {
 			cout << "Counter: " << c << ", skeep: " << skeep << ", ave dt: " << ave_dt*1e-9 << " s, rms dt: " << std::sqrt(ave_var_dt - ave_dt*ave_dt)*1e-9 <<
 				", max dt: " << max_dt*1.e-09 << ", min dt: " << min_dt*1e-9 << "; " << g.ii01 << " : " << g.ii02 << " : " << 
 				g.T[4]/T01 << " : " << g.T[5]/T01 << " : " << g.T[6]/T02 << " : " << g.T[7]/T02 << ", T bits: " << T_bits << endl;
+		#endif
+		#if gen_version == 3
+			const double T01 = std::pow(lfsr_rng_3::p1, 4) - 1;
+			const double T02 = std::pow(lfsr_rng_3::p2, 4) - 1;
+			const double T03 = std::pow(lfsr_rng_3::p3, 4) - 1;
+			const double T04 = std::pow(lfsr_rng_3::p4, 4) - 1;
+			double T_bits = std::log2(g.T[8]) + std::log2(g.T[9]) + std::log2(g.T[10]) + std::log2(g.T[11]);
+			T_bits += std::log2(g.T[12]) + std::log2(g.T[13]) + std::log2(g.T[14]) + std::log2(g.T[15]);
+			cout << "Counter: " << c << ", skeep: " << skeep << ", ave dt: " << ave_dt*1e-9 << " s, rms dt: " << std::sqrt(ave_var_dt - ave_dt*ave_dt)*1e-9 <<
+				", max dt: " << max_dt*1.e-09 << ", min dt: " << min_dt*1e-9 << "; " <<
+				g.ii01 << " : " << g.ii02 << " : " << g.ii03 << " : " << g.ii04 << " : " << 
+				g.T[8]/T01 << " : " << g.T[9]/T01 << " : " << g.T[10]/T02 << " : " << g.T[11]/T02 << " : " <<
+				g.T[12]/T03 << " : " << g.T[13]/T03 << " : " << g.T[14]/T04 << " : " << g.T[15]/T04 <<
+				", T bits: " << T_bits << endl;
 		#endif
 		// Byte-wise chi-square test
 		{

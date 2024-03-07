@@ -1,5 +1,10 @@
 #pragma once
 
+
+/*
+Simplified Random numbers generator with ~64 bit period.
+*/
+
 #include "lfsr.hpp"
 
 #include <utility>
