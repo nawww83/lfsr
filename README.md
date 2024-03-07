@@ -64,7 +64,7 @@ A bit-wise XOR is chosen to combine the states.
 
 Two generators ${\vec g}^{(0)}$ and ${\vec g}^{(1)}$ are packed into one SIMD 128-bit vector in C++ code for better SIMD registers usage. Such generator is called as **LFSR pair**. For better performance, the input is processed by 16-bit samples.
 
-We use two LFSR pairs of length $m=4$, and primes $p=251$ and $p=241$. Final states of two pairs are XOR-ed as usual. So, the total free period of given LFSR hash is equal to $$\text{LCM} \left( {{(p_1^4 - 1)(p_1^3 - 1)} \over {p_1 - 1}}; {{(p_2^4 - 1)(p_2^3 - 1)} \over {p_2 - 1}} \right) = 68'604'332'454'972'583'997'112'000,$$ i.e. approx. $86$ bits. Here LCM - least common multiple.
+We use two LFSR pairs of length $m=4$, and primes $p_1 = 251$ and $p_2 = 241$. Final states of two pairs are XOR-ed as usual. So, the total free period of given LFSR hash is equal to $$\text{LCM} \left( {{(p_1^4 - 1)(p_1^3 - 1)} \over {p_1 - 1}}; {{(p_2^4 - 1)(p_2^3 - 1)} \over {p_2 - 1}} \right) = 68'604'332'454'972'583'997'112'000,$$ i.e. $\approx 86$ bits. Here LCM - least common multiple.
 
 To improve the crypto resilience, the first LFSR pair is driven by the original input, but the second one is driven by reversed input vector. Also, the **salt** is added before/after input loop.
 
