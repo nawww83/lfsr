@@ -22,8 +22,11 @@ Approx. 210 MB/s @ Intel i7-8565U CPU 4.2GHz, GCC 11.4
 
 ## Random number generator performance
 V1: ~130 MB/s @ Period: ~77 bit/sample
+
 V3: ~50MB/s @ Period: ~155 bit/sample
+
 @ Intel i7-8565U CPU 4.2GHz, GCC 12.3
+
 1 sample = 16 bit.
 
 ## LFSR hash principles
