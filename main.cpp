@@ -20,6 +20,8 @@ int main() {
 	test_special();
 	test_total_period();
 	// test_random_generators();
+
+	find_lfsr_coefficients_T0_period();
     
 	return 0;
 }
