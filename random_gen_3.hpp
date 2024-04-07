@@ -1,7 +1,9 @@
 #pragma once
 
-/*
-Random numbers generator with ~155 bit period.
+/**
+ * @author Новиков А.В.
+ *
+ * Генератор псевдослучайных чисел с периодом около 2^155 по отношению к 16-битному отсчету.
 */
 
 #include "lfsr.hpp"
@@ -11,7 +13,6 @@ Random numbers generator with ~155 bit period.
 #include <numeric>
 #include <array>
 
-
 namespace lfsr_rng_3 {
 
 using u16 = lfsr8::u16;
@@ -19,25 +20,36 @@ using u32 = lfsr8::u32;
 using u64 = lfsr8::u64;
 using u128 = std::pair<lfsr8::u64, lfsr8::u64>;
 
-static constexpr u16 p1 = 19;
-static constexpr u16 p2 = 17;
-static constexpr u16 p3 = 17;
-static constexpr u16 p4 = 13;
+// Простые числа: поля Галуа GF(p^m).
+static constexpr std::array<int, 4> p {19, 17, 17, 13};
+// Длина сдвоенных LFSR-генераторов. Один генератор имеет длину m/2.
 static constexpr int m = 8;
 
-using LFSR_pair_1 = lfsr8::LFSR_paired_2x4<p1>;
-using LFSR_pair_2 = lfsr8::LFSR_paired_2x4<p2>;
-using LFSR_pair_3 = lfsr8::LFSR_paired_2x4<p3>;
-using LFSR_pair_4 = lfsr8::LFSR_paired_2x4<p4>;
+using LFSR_pair_1 = lfsr8::LFSR_paired_2x4<p[0]>;
+using LFSR_pair_2 = lfsr8::LFSR_paired_2x4<p[1]>;
+using LFSR_pair_3 = lfsr8::LFSR_paired_2x4<p[2]>;
+using LFSR_pair_4 = lfsr8::LFSR_paired_2x4<p[3]>;
 using STATE = lfsr8::u16x8;
 
+// Коэффициенты LFSR-генераторов, дающие максимальный свободный (немодулированный) период.
 static constexpr STATE K1 = {9, 5, 2, 0, 4, 2, 2, 6};    // p=19
 static constexpr STATE K2 = {3, 4, 2, 1, 6, 1, 2, 1};    // p=17
 static constexpr STATE K3 = {3, 2, 3, 4, 6, 2, 0, 7};    // p=17
 static constexpr STATE K4 = {2, 3, 1, 1, 2, 0, 1, 7};    // p=13
-static constexpr std::array<u16, 4> primes {7, 11, 11, 11}; // Sawtooth periods: such that T = p^4 - 1 is not divisible by the primes
 
-STATE operator^(const STATE& x, const STATE& y) {
+// Периоды модулирующей "пилы": выбраны так, что периоды T = p^4 - 1 не делятся на соответствующие периоды нацело.
+static constexpr std::array<int, 4> primes {7, 11, 11, 11};
+
+
+// Дубликаты простых периодов для упрощения реализации.
+static constexpr std::array<int, 8> primes_duplicates {7, 7, 11, 11, 11, 11, 11, 11};
+
+static_assert((primes[0] == primes_duplicates[0]) && (primes[0] == primes_duplicates[1]));
+static_assert((primes[1] == primes_duplicates[2]) && (primes[1] == primes_duplicates[3]));
+static_assert((primes[2] == primes_duplicates[4]) && (primes[2] == primes_duplicates[5]));
+static_assert((primes[3] == primes_duplicates[6]) && (primes[3] == primes_duplicates[7]));
+
+inline STATE operator^(const STATE& x, const STATE& y) {
     STATE st;
     for (int i=0; i<m; ++i) {
         st[i] = x[i] ^ y[i];
@@ -45,7 +57,14 @@ STATE operator^(const STATE& x, const STATE& y) {
     return st;
 }
 
-STATE operator%(const STATE& x, u32 p) {
+inline void operator^=(STATE& x, const STATE& y) {
+    for (int i=0; i<m; ++i) {
+        x[i] ^= y[i];
+    }
+}
+
+
+inline STATE operator%(const STATE& x, u32 p) {
     STATE st;
     for (int i=0; i<m; ++i) {
         st[i] = x[i] % p;
@@ -53,167 +72,248 @@ STATE operator%(const STATE& x, u32 p) {
     return st;
 }
 
-void operator%=(STATE& x, u32 p) {
+inline void operator%=(STATE& x, u32 p) {
     for (int i=0; i<m; ++i) {
         x[i] %= p;
     }
 }
 
+template <size_t N>
+inline void sawtooth(std::array<u16, N>& v, const std::array<int, N>& p) {
+    size_t i = 0;
+    for (auto& el : v) {
+        el++;
+        el %= p[i];
+        i++;
+    }
+}
 
-struct gens {
+template <size_t N>
+inline void increment(std::array<u32, N>& v) {
+    for (auto& el : v) {
+        el++;
+    }
+}
+
+/**
+ * @brief Вычисляет НОК сравнительно небольших чисел.
+ * @param v Массив чисел.
+ * @return НОК чисел массива.
+ */
+template <size_t N>
+inline int my_lcm(const std::array<int, N>& v) {
+    int lcm_res = v[0];
+    for (size_t i=1; i<N; ++i) {
+        lcm_res = std::lcm(lcm_res, v[i]);
+    }
+    return lcm_res;
+}
+
+/**
+ * @brief Набор из 4-х генераторных пар типа LFSR.
+ */
+struct Generators {
+private:
     LFSR_pair_1 gp1;
     LFSR_pair_2 gp2;
     LFSR_pair_3 gp3;
     LFSR_pair_4 gp4;
-    std::array<u32, 16> T;
-    u16 ii11;  // Sawtooth initial states
-    u16 ii12;  //
-    u16 ii21;  //
-    u16 ii22;  //
-    u16 ii31;  //
-    u16 ii32;  //
-    u16 ii41;  //
-    u16 ii42;  //
-    u16 ii01;  // initial states
-    u16 ii02;  //
-    u16 ii03;  //
-    u16 ii04;  //
+    /**
+     * @brief Счетчики периодов.
+     */
+    std::array<u32, 8> Tc{};
+
+    /**
+     * @brief Вычисленные периоды.
+     */
+    std::array<u32, 8> Tref{};
+
+    /**
+     * @brief Рабочие состояния генераторов "пилы".
+     */
+    std::array<u16, 8> ii_saw{};
+
+    /**
+     * @brief Вычисленные начальные состояния генераторов "пилы".
+     */
+    std::array<u16, 8> ii0_saw{};
+
+    /**
+     * @brief Признак того, что итоговый генератор инициализирован заданным seed.
+     */
     int is_finded;
+
 public:
-    constexpr gens(): gp1(K1), gp2(K2),  gp3(K3), gp4(K4), T({}),
-        ii11(0), ii12(0), ii21(0), ii22(0), ii31(0), ii32(0), ii41(0), ii42(0),
-        ii01(0), ii02(0),
+
+    /**
+     * @brief Конструктор.
+     */
+    constexpr Generators(): gp1(K1), gp2(K2),  gp3(K3), gp4(K4),
         is_finded(0)
-        {}
+    {}
+
+    /**
+     * @brief Признак успешной инициализации генератора заданным seed.
+     * @return
+     */
     bool is_succes() const {
         return (is_finded != 0);
     }
+
+    /**
+     * @brief Вычисляет общий период генератора, бит/отсчет. 
+     * @return Период в битах, вещественное число.
+     */
+    double period() const {
+        double T_bits = std::log2(Tref[0]) + std::log2(Tref[1]) + std::log2(Tref[2]) + std::log2(Tref[3]);
+			T_bits += std::log2(Tref[4]) + std::log2(Tref[5]) + std::log2(Tref[6]) + std::log2(Tref[7]);
+        return T_bits;
+    }
+
+    /**
+     * @brief Признак того, что состояние младшей половины генераторной пары совпадает с переданным.
+     * @param st Переданное состояние.
+     * @param idx Идентификатор LFSR генераторной пары.
+     * @return Признак равенства.
+     */
+    bool is_state_low(STATE st, int idx) {
+        switch (idx) {
+        case 0:
+            return gp1.is_state_low(st);
+            break;
+        case 1:
+            return gp2.is_state_low(st);
+            break;
+        case 2:
+            return gp3.is_state_low(st);
+            break;
+        case 3:
+            return gp4.is_state_low(st);
+            break;
+        default:
+            break;
+        }
+        return false;
+    }
+
+    /**
+     * @brief Признак того, что состояние старшей половины генераторной пары совпадает с переданным.
+     * @param st Переданное состояние.
+     * @param idx Идентификатор LFSR генераторной пары.
+     * @return Признак равенства.
+     */
+    bool is_state_high(STATE st, int idx) {
+        switch (idx) {
+        case 0:
+            return gp1.is_state_high(st);
+            break;
+        case 1:
+            return gp2.is_state_high(st);
+            break;
+        case 2:
+            return gp3.is_state_high(st);
+            break;
+        case 3:
+            return gp4.is_state_high(st);
+            break;
+        default:
+            break;
+        }
+        return false;
+    }
+
+    /**
+     * @brief Установить начальное состояние генератора.
+     * @param st Переданный "сид".
+     */
     void seed(STATE st) {
-        STATE tmp1 = st;
-        STATE tmp2 = st;
-        STATE tmp3 = st;
-        STATE tmp4 = st;
-        for (auto& el : tmp1) {
-            el %= 16;
+        // Некоторая "соль".
+        std::array<u16, 4> h {1, 2, 2, 3};
+        // Распределить начальное состояние по всем LFSR-генераторам.
+        STATE tmp[4]  {st, st, st, st};
+        for (size_t i=0; i<h.size(); ++i) {
+            for (auto& el : tmp[i]) {
+                el >>= i*4;
+                el %= 16;
+                h[i] ^= el;
+            }
         }
-        for (auto& el : tmp2) {
-            el >>= 4;
-            el %= 16;
+        gp1.set_state(tmp[0]);
+        gp2.set_state(tmp[1]);
+        gp3.set_state(tmp[2]);
+        gp4.set_state(tmp[3]);
+        // Насытить генераторы.
+        for (int i=0; i<my_lcm<4>(primes); ++i) {
+            gp1.next(h[0]);
+            gp2.next(h[1]);
+            gp3.next(h[2]);
+            gp4.next(h[3]);
+            sawtooth<4>(h, primes);
         }
-        for (auto& el : tmp3) {
-            el >>= 8;
-            el %= 16;
-        }
-        for (auto& el : tmp4) {
-            el >>= 12;
-            el %= 16;
-        }
-        gp1.set_state(tmp1);
-        gp2.set_state(tmp2);
-        gp3.set_state(tmp3);
-        gp4.set_state(tmp4);
-        u16 h1 = 1;
-        for (const auto& el : tmp1) {
-            h1 ^= el;
-        }
-        u16 h2 = 2;
-        for (const auto& el : tmp2) {
-            h2 ^= el;
-        }
-        u16 h3 = 2;
-        for (const auto& el : tmp3) {
-            h3 ^= el;
-        }
-        u16 h4 = 3;
-        for (const auto& el : tmp4) {
-            h4 ^= el;
-        }
-        u16 i1 = h1;
-        u16 i2 = h2;
-        u16 i3 = h3;
-        u16 i4 = h4;
-        int lcm = std::lcm((int)primes[0], (int)primes[1]);
-        lcm = std::lcm(lcm, (int)primes[2]);
-        lcm = std::lcm(lcm, (int)primes[3]);
-        for (int i=0; i<lcm; ++i) { // saturate LFSRs
-            gp1.next(i1);
-            gp2.next(i2);
-            gp3.next(i3);
-            gp4.next(i4);
-            i1++; i2++; i3++; i4++;
-            i1 %= primes[0];
-            i2 %= primes[1];
-            i3 %= primes[2];
-            i4 %= primes[3];
-        }
-        const auto ref1 = gp1.get_state();
-        const auto ref2 = gp2.get_state();
-        const auto ref3 = gp3.get_state();
-        const auto ref4 = gp4.get_state();
-        auto test251 = [ref1, ref2, ref3, ref4, this](u16 i01, u16 i02, u16 i03, u16 i04) -> int {
-            T = {1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
-            const u32 T01 = std::pow((long)p1, 4) - 1;
-            const u32 T02 = std::pow((long)p2, 4) - 1;
-            const u32 T03 = std::pow((long)p3, 4) - 1;
-            const u32 T04 = std::pow((long)p4, 4) - 1;
-            gp1.set_state(ref1);
-            gp2.set_state(ref2);
-            gp3.set_state(ref3);
-            gp4.set_state(ref4);
-            u16 i1 = i01;
-            u16 i2 = i02;
-            u16 i3 = i03;
-            u16 i4 = i04;
+        // Сохранить состояния генераторов в качестве опорных (начальных).
+        const std::array<STATE, 4> refs {gp1.get_state(), gp2.get_state(), gp3.get_state(), gp4.get_state()};
+        /**
+         * @brief Протестировать начальные состояния генераторов "пилы".
+         * @return Признак успеха, целое число.
+         */
+        auto test251 = [&refs, this](u16 i01, u16 i02, u16 i03, u16 i04) -> int {
+            Tc = {1, 1, 1, 1, 1, 1, 1, 1};   // Счетчики.
+            Tref = {0, 0, 0, 0, 0, 0, 0, 0}; // Найденные периоды.
+            std::array<u32, 4> Tmax; // Наибольший свободный период.
+            Tmax[0] = std::pow((long)p[0], m/2) - 1;
+            Tmax[1] = std::pow((long)p[1], m/2) - 1;
+            Tmax[2] = std::pow((long)p[2], m/2) - 1;
+            Tmax[3] = std::pow((long)p[3], m/2) - 1;
+            // Установить генераторы в опорное состояние.
+            gp1.set_state(refs[0]);
+            gp2.set_state(refs[1]);
+            gp3.set_state(refs[2]);
+            gp4.set_state(refs[3]);
+            std::array<u16, 4> i {i01, i02, i03, i04};
             while (true) {
-                gp1.next(i1); //  Sawtooth modulation
-                gp2.next(i2); //  to get random periods T[i] such that sum of T[i] is equal to q*T0, where the q - Sawtooth period
-                gp3.next(i3);
-                gp4.next(i4);
-                i1++; i2++;   //  The remainder mod(p^4 - 1 , q) is not zero => we achieve all indexes i in [0, q) when LFSR is in the same reference state
-                i3++; i4++;
-                i1 %= primes[0];
-                i2 %= primes[1]; // We visit almost all i ecxept one => we set the restriction T < q*T0 below
-                i3 %= primes[2];
-                i4 %= primes[3];
-                T[8] = (! gp1.is_state_low(ref1)) ? T[8] : ((T[0] < primes[0]*T01) ? T[0] : T[8]);
-                T[9] = (! gp1.is_state_high(ref1)) ? T[9] : ((T[1] < primes[0]*T01) ? T[1] : T[9]);
-                T[10] = (! gp2.is_state_low(ref2)) ? T[10] : ((T[2] < primes[1]*T02) ? T[2] : T[10]);
-                T[11] = (! gp2.is_state_high(ref2)) ? T[11] : ((T[3] < primes[1]*T02) ? T[3] : T[11]);
-                T[12] = (! gp3.is_state_low(ref3)) ? T[12] : ((T[4] < primes[2]*T03) ? T[4] : T[12]);
-                T[13] = (! gp3.is_state_high(ref3)) ? T[13] : ((T[5] < primes[2]*T03) ? T[5] : T[13]);
-                T[14] = (! gp4.is_state_low(ref4)) ? T[14] : ((T[6] < primes[3]*T04) ? T[6] : T[14]);
-                T[15] = (! gp4.is_state_high(ref4)) ? T[15] : ((T[7] < primes[3]*T04) ? T[7] : T[15]);
-                T[0]++; T[1]++;
-                T[2]++; T[3]++;
-                T[4]++; T[5]++;
-                T[6]++; T[7]++;
-                // All counters are out of the range
-                if ((T[0] >= primes[0]*T01) && (T[1] >= primes[0]*T01) && (T[2] >= primes[1]*T02) && (T[3] >= primes[1]*T02) &&
-                    (T[4] >= primes[2]*T03) && (T[5] >= primes[2]*T03) && (T[6] >= primes[3]*T04) && (T[7] >= primes[3]*T04)) {
+                gp1.next(i[0]);
+                gp2.next(i[1]);
+                gp3.next(i[2]);
+                gp4.next(i[3]);
+                // Остаток от деления mod(p^4 - 1 , q) не равен нулю => мы проходим все индексы i in [0, q),
+                // когда LFSR генератор находится в одном и том же опорном состоянии.
+                // Получаем набор случайных периодов T[i] так, что их сумма неслучайна и равна q*T0, где q - период "пилы".
+                // Модуляция пилообразным кодом.
+                sawtooth(i, primes);
+                // Но ключевой момент рандомизации периодоы:
+                // мы будем проходить почти все i, кроме одного => устанавливаем ограничение на суммарный период T[j] = sum_of(All i except last one) < q*T0.
+                for (int j=0; j<4; ++j)
+                    Tref[2*j] = !(is_state_low(refs[j], j)) ? Tref[2*j] : (Tc[2*j] < primes_duplicates[2*j]*Tmax[j] ? Tc[2*j] : Tref[2*j]);
+                for (int j=0; j<4; ++j)
+                    Tref[2*j+1] = !(is_state_high(refs[j], j)) ? Tref[2*j+1] : (Tc[2*j+1] < primes_duplicates[2*j+1]*Tmax[j] ? Tc[2*j+1] : Tref[2*j+1]);
+                increment(Tc);
+                // Проверяем не вышли ли все счетчики за грани допустимого диапазона.
+                bool is_enough = true;
+                for (int j=0; j<8; ++j)
+                    is_enough &= (Tc[j] >= primes_duplicates[j]*Tmax[j/2]);
+                if (is_enough) {
                     break;
                 }
             }
-            auto gcd1 = std::gcd(std::gcd(T[8], T[9]), std::gcd(T[10], T[11]));
-            auto gcd2 = std::gcd(std::gcd(T[12], T[13]), std::gcd(T[14], T[15]));
+            // Проверяем НОД найденных периодов T[j].
+            const auto gcd1 = std::gcd(std::gcd(Tref[0], Tref[1]), std::gcd(Tref[2], Tref[3]));
+            const auto gcd2 = std::gcd(std::gcd(Tref[4], Tref[5]), std::gcd(Tref[6], Tref[7]));
             auto gcd = std::gcd(gcd1, gcd2);
-            return ((gcd < 2) && (T[8] > T01) && (T[9] > T01) && (T[10] > T02) && (T[11] > T02) && 
-                    (T[12] > T03) && (T[13] > T03) && (T[14] > T04) && (T[15] > T04)) ? 1 : 0;
+            // Устанавливаем ограничение на НОД. По статистике оно зачастую выполняется. Изредка бывает тест не проходит,
+            // тогда мы запускаем test251() еще раз: в этом случае с большой вероятностью единичный НОД будет достигнут.
+            bool is_ok = (gcd < 2);
+            for (int j=0; j<8; ++j)
+                is_ok &= (Tref[j] > Tmax[j/2]);
+            return is_ok ? 1 : 0;
         };
         is_finded = 0;
-        ii01 = 0;
-        ii02 = 0;
-        ii03 = 0;
-        ii04 = 0;
         for (u16 i1=1; i1<primes[0]; ++i1) {
             for (u16 i2=1; i2<primes[1]; ++i2) {
                 for (u16 i3=1; i3<primes[2]; ++i3) {
                     for (u16 i4=1; i4<primes[3]; ++i4) {
                         is_finded = test251(i1, i2, i3, i4);
                         if (is_finded != 0) {
-                            ii01 = i1;
-                            ii02 = i2;
-                            ii03 = i3;
-                            ii04 = i4;
+                            ii0_saw = {i1, i1, i2, i2, i3, i3, i4, i4};
                             break;
                         }
                     } // i4
@@ -229,81 +329,46 @@ public:
                 break;
             }
         } // i1
-        ii11 = ii01;
-        ii12 = ii01;
-        ii21 = ii02;
-        ii22 = ii02;
-        ii31 = ii03;
-        ii32 = ii03;
-        ii41 = ii04;
-        ii42 = ii04;
-        T[0] = 1; // reset counters
-        T[1] = 1;
-        T[2] = 1;
-        T[3] = 1;
-        T[4] = 1;
-        T[5] = 1;
-        T[6] = 1;
-        T[7] = 1;
-        gp1.set_state(ref1); // must: restore initial states
-        gp2.set_state(ref2);
-        gp3.set_state(ref3);
-        gp4.set_state(ref4);
+        // Инициализируем генераторы.
+        ii_saw = ii0_saw;
+        Tc = {1, 1, 1, 1, 1, 1, 1, 1};
+        gp1.set_state(refs[0]);
+        gp2.set_state(refs[1]);
+        gp3.set_state(refs[2]);
+        gp4.set_state(refs[3]);
     }
+
+    /**
+     * @brief Генерирует 64-битное случайное число.
+     * @return Случайное целое беззнаковое 64-битное число.
+     */
     u64 next_u64() {
         u64 x = 0;
-        STATE mSt;
-        //
         for (int i=0; i<4; ++i) {
-            gp1.next(ii11, ii12); // must: the same operator as in the seed()
-            gp2.next(ii21, ii22);
-            gp3.next(ii31, ii32);
-            gp4.next(ii41, ii42);
-            ii11++; ii12++; ii21++; ii22++;
-            ii31++; ii32++; ii41++; ii42++;
-            ii11 %= primes[0];  // Sawtooth
-            ii12 %= primes[0];
-            ii21 %= primes[1];
-            ii22 %= primes[1];
-            ii31 %= primes[2];
-            ii32 %= primes[2];
-            ii41 %= primes[3];
-            ii42 %= primes[3];
-            ii11 = (T[0] != T[8]) ? ii11 : ii01;
-            ii12 = (T[1] != T[9]) ? ii12 : ii01;
-            ii21 = (T[2] != T[10]) ? ii21 : ii02;
-            ii22 = (T[3] != T[11]) ? ii22 : ii02;
-            ii31 = (T[4] != T[12]) ? ii31 : ii03;
-            ii32 = (T[5] != T[13]) ? ii32 : ii03;
-            ii41 = (T[6] != T[14]) ? ii41 : ii04;
-            ii42 = (T[7] != T[15]) ? ii42 : ii04;
-            T[0] = (T[0] != T[8]) ? T[0] : 0; // reset counters
-            T[1] = (T[1] != T[9]) ? T[1] : 0;
-            T[2] = (T[2] != T[10]) ? T[2] : 0;
-            T[3] = (T[3] != T[11]) ? T[3] : 0;
-            T[4] = (T[4] != T[12]) ? T[4] : 0;
-            T[5] = (T[5] != T[13]) ? T[5] : 0;
-            T[6] = (T[6] != T[14]) ? T[6] : 0;
-            T[7] = (T[7] != T[15]) ? T[7] : 0;
-            T[0]++; T[1]++; T[2]++; T[3]++;
-            T[4]++; T[5]++; T[6]++; T[7]++;
+            gp1.next(ii_saw[0], ii_saw[1]);
+            gp2.next(ii_saw[2], ii_saw[3]);
+            gp3.next(ii_saw[4], ii_saw[5]);
+            gp4.next(ii_saw[6], ii_saw[7]);
+            sawtooth(ii_saw, primes_duplicates);
+            // Сбрасываем счетчик и генератор "пилы", если период LFSR был достигнут.
+            for (int j=0; j<8; ++j) {
+                ii_saw[j] = (Tc[j] != Tref[j]) ? ii_saw[j] : ii0_saw[j];
+                Tc[j] = (Tc[j] != Tref[j]) ? Tc[j] : 0;
+            }
+            increment(Tc);
             //
-            mSt = gp1.get_state() ^ gp2.get_state() ^ gp3.get_state() ^ gp4.get_state();
+            STATE mSt = gp1.get_state();
+            mSt ^= gp2.get_state();
+            mSt ^= gp3.get_state();
+            mSt ^= gp4.get_state();
             mSt %= 16;
-            x <<= 4;
-            x |= mSt[0] ^ mSt[4];
-            x <<= 4;
-            x |= mSt[1] ^ mSt[5];
-            x <<= 4;
-            x |= mSt[2] ^ mSt[6];
-            x <<= 4;
-            x |= mSt[3] ^ mSt[7];
+            for (int j=0; j<4; ++j) {
+                x <<= 4;
+                x |= mSt[j] ^ mSt[j+4];
+            }
         }
-        //
         return x;
     }
 };
 
-
 }
-

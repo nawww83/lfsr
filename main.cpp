@@ -591,7 +591,7 @@ int main() {
 		lfsr_rng_2::gens g;
 	#endif
 	#if gen_version == 3
-		lfsr_rng_3::gens g;
+		lfsr_rng_3::Generators g;
 	#endif
 	GeometricDistribution<int> r(0.3);
 	r.seed();
@@ -657,18 +657,9 @@ int main() {
 				g.T[4]/T01 << " : " << g.T[5]/T01 << " : " << g.T[6]/T02 << " : " << g.T[7]/T02 << ", T bits: " << T_bits << endl;
 		#endif
 		#if gen_version == 3
-			const double T01 = std::pow(lfsr_rng_3::p1, 4) - 1;
-			const double T02 = std::pow(lfsr_rng_3::p2, 4) - 1;
-			const double T03 = std::pow(lfsr_rng_3::p3, 4) - 1;
-			const double T04 = std::pow(lfsr_rng_3::p4, 4) - 1;
-			double T_bits = std::log2(g.T[8]) + std::log2(g.T[9]) + std::log2(g.T[10]) + std::log2(g.T[11]);
-			T_bits += std::log2(g.T[12]) + std::log2(g.T[13]) + std::log2(g.T[14]) + std::log2(g.T[15]);
+			const double T_bits = g.period();
 			cout << "Counter: " << c << ", skeep: " << skeep << ", ave dt: " << ave_dt*1e-9 << " s, rms dt: " << std::sqrt(ave_var_dt - ave_dt*ave_dt)*1e-9 <<
-				", max dt: " << max_dt*1.e-09 << ", min dt: " << min_dt*1e-9 << "; " <<
-				g.ii01 << " : " << g.ii02 << " : " << g.ii03 << " : " << g.ii04 << " : " << 
-				g.T[8]/T01 << " : " << g.T[9]/T01 << " : " << g.T[10]/T02 << " : " << g.T[11]/T02 << " : " <<
-				g.T[12]/T03 << " : " << g.T[13]/T03 << " : " << g.T[14]/T04 << " : " << g.T[15]/T04 <<
-				", T bits: " << T_bits << endl;
+				", max dt: " << max_dt*1.e-09 << ", min dt: " << min_dt*1e-9 << "; T bits: " << T_bits << endl;
 		#endif
 		// Byte-wise chi-square test
 		{
