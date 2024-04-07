@@ -9,18 +9,22 @@ It was estimated the proposed LFSR hash is comparable to **SHA-512**. The propos
 
 Additionally, the source code contains some functions to find vectors of coefficients $K$ that provide periods $T_0 = {p}^{m} - 1$ and $T_1 = {p}^{m-1} - 1$.
 
-2. You can generate $64$-bit **cryptographic** random numbers based on two LFSR pairs (**total** length $4m$) with small primes $p$: $17$, $19$, and **Sawtooth modulation** of that pairs with small periods: $7$, $11$, see Random Generator V3.
+2. You can generate $64$-bit **cryptographic** random numbers based on two LFSR pairs (**total** length $4m$) with small primes $p$: $17$, $19$, and **Sawtooth modulation** of that pairs with small periods: $7$, $11$, see Random Generators V1 and V3.
 
 ## Build
 g++ main.cpp lfsr_hash.cpp -std=c++20 -msse4.1 -O3 -o lfsr
+
 ## Run
 ./lfsr
 
 ## Hash performance
 Approx. 210 MB/s @ Intel i7-8565U CPU 4.2GHz, GCC 11.4
 
-## Random number generator V1 performance
-Approx. 120 MB/s @ Intel i7-8565U CPU 4.2GHz, GCC 11.4
+## Random number generator performance
+V1: ~130 MB/s @ Period: ~77 bit/sample
+V3: ~50MB/s @ Period: ~155 bit/sample
+@ Intel i7-8565U CPU 4.2GHz, GCC 12.3
+1 sample = 16 bit.
 
 ## LFSR hash principles
 The base unit for LFSR hash is a LFSR register, which can be interpreted as a Finite State Machine (Moore machine to be precise).
