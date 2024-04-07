@@ -78,21 +78,24 @@ inline void operator%=(STATE& x, u32 p) {
     }
 }
 
-template <size_t N>
-inline void sawtooth(std::array<u16, N>& v, const std::array<int, N>& p) {
-    size_t i = 0;
+template <typename T, size_t N>
+inline void increment(std::array<T, N>& v) {
     for (auto& el : v) {
         el++;
-        el %= p[i];
-        i++;
+    }
+}
+
+template <typename T, size_t N>
+inline void modulo(std::array<T, N>& v, const std::array<int, N>& p) {
+    for (size_t i=0; auto& el : p) {
+        v[i++] %= el;
     }
 }
 
 template <size_t N>
-inline void increment(std::array<u32, N>& v) {
-    for (auto& el : v) {
-        el++;
-    }
+inline void sawtooth(std::array<u16, N>& v, const std::array<int, N>& p) {
+    increment<u16, N>(v);
+    modulo<u16, N>(v, p);
 }
 
 /**
