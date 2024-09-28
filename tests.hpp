@@ -289,3 +289,11 @@ void test_random_generators();
 void find_lfsr_coefficients_T0_period();
 
 void find_lfsr_coefficients_T1_period();
+
+void test_lfsr_hash_coverage_1();
+
+void test_lfsr_hash_coverage_2();
+
+void test_lfsr_hash_coverage_3();
+
+void test_lfsr_hash_coverage_4();

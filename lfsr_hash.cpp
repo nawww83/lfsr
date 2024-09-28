@@ -48,18 +48,26 @@ void lfsr_hash::gens::process_input(const uint8_t* input, size_t n) {
 
 lfsr_hash::u32 lfsr_hash::hash32(const uint8_t* input, size_t n) {
     g.reset();
+    const salt size_salt1 = {static_cast<int>(n % 31), static_cast<u16>(n), static_cast<u16>(3*n)};
+    g.add_salt(size_salt1);
     g.add_salt( ((n % 2) == 0) ? S1 : S0 );
     g.process_input(input, n);
     g.add_salt( ((n % 2) == 0) ? S2 : S1 );
+    const salt size_salt2 = {static_cast<int>(3*n % 31), static_cast<u16>(3*n), static_cast<u16>(n)};
+    g.add_salt(size_salt2);
     u32 h = g.form_hash32();
     return h;
 }
 
 lfsr_hash::u64 lfsr_hash::hash64(const uint8_t* input, size_t n) {
     g.reset();
+    const salt size_salt1 = {static_cast<int>(n % 31), static_cast<u16>(n), static_cast<u16>(3*n)};
+    g.add_salt(size_salt1);
     g.add_salt( ((n % 2) == 0) ? S1 : S2 );
     g.process_input(input, n);
     g.add_salt( ((n % 2) == 0) ? S3 : S1 );
+    const salt size_salt2 = {static_cast<int>((5*n + 3) % 37), static_cast<u16>(3*n), static_cast<u16>(n)};
+    g.add_salt(size_salt2);
     u64 h1 = g.form_hash32();
     g.add_salt( ((n % 2) == 0) ? S1 : S2 );
     u64 h2 = g.form_hash32();
@@ -68,12 +76,16 @@ lfsr_hash::u64 lfsr_hash::hash64(const uint8_t* input, size_t n) {
 
 lfsr_hash::u128 lfsr_hash::hash128(const uint8_t* input, size_t n) {
     g.reset();
+    const salt size_salt1 = {static_cast<int>(n % 31), static_cast<u16>(n), static_cast<u16>(3*n)};
+    g.add_salt(size_salt1);
     g.add_salt(S1);
     g.add_salt(S0);
     g.add_salt( ((n % 2) == 0) ? S0 : S4 );
     g.process_input(input, n);
     g.add_salt(S0);
     g.add_salt(S1);
+    const salt size_salt2 = {static_cast<int>((5*n + 3) % 37), static_cast<u16>(3*n), static_cast<u16>(n)};
+    g.add_salt(size_salt2);
     g.add_salt( ((n % 2) == 0) ? S1 : S0 );
 
     u64 h1 = g.form_hash32();
