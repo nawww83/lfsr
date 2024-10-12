@@ -11,7 +11,7 @@ static timer_n::Timer timer;
 
 void test_next_back() {
     std::cout << "Wait for Next-Back test...\n";
-    test_next_back_inner<19, 4>();
+    test_next_back_inner<19>();
     std::cout << " All Ok! Completed.\n";
 }
 

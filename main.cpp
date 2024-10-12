@@ -24,8 +24,8 @@ int main() {
 	// test_lfsr_hash_coverage_4();
 
 	test_next_back();
-	// test_state_increment();
-	// test_special();
+	test_state_increment();
+	test_special();
 	// test_total_period();
 	// test_random_generators();
 
