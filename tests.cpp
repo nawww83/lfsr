@@ -2,7 +2,6 @@
 
 #include "lfsr_hash.hpp"
 
-#include "random_gen.hpp"
 #include "random_gen_2.hpp"
 #include "random_gen_3.hpp"
 
@@ -274,9 +273,6 @@ void test_lfsr_hash_coverage_4() {
 void test_random_generators() {
 	// Random generator infinite test
 	#define gen_version 3
-	#if gen_version == 1
-		lfsr_rng::gens g;
-	#endif
 	#if gen_version == 2
 		lfsr_rng_2::gens g;
 	#endif
@@ -285,7 +281,7 @@ void test_random_generators() {
 	#endif
 	rnd_n::GeometricDistribution<int> r(0.3);
 	r.seed();
-	#if gen_version == 1 || gen_version == 3
+	#if gen_version == 3
 		auto state_conversion = [](lfsr8::u32x4 st) {
 			lfsr8::u16x8 st1;
 			st1[0] = st[0];
@@ -303,7 +299,7 @@ void test_random_generators() {
 	#endif
 	//
 	long long c = 0;
-	#if gen_version == 1 || gen_version == 3
+	#if gen_version == 3
 		long long skeep = 0;
 	#endif
 	double ave_dt = 0;
@@ -316,7 +312,7 @@ void test_random_generators() {
 		std::cout << std::endl;
 		auto st = rnd_n::get_random_u32x4<4>(r);
 		timer.reset();
-		#if gen_version == 1 || gen_version == 3
+		#if gen_version == 3
 			const auto st_c = state_conversion(st);
 			g.seed(st_c);
 		#endif
@@ -325,7 +321,7 @@ void test_random_generators() {
 		#endif
 		double dt = timer.elapsed_ns();
 		//
-		#if gen_version == 1 || gen_version == 3
+		#if gen_version == 3
 			if (! g.is_succes()) {
 				skeep++; // it is better to achieve zero skeeps
 				std::cout << "Skipped!\n";

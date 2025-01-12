@@ -26,7 +26,7 @@ int main() {
 	test_next_back();
 	test_state_increment();
 	test_special();
-	// test_total_period();
+	test_total_period();
 	// test_random_generators();
 
 	// find_lfsr_coefficients_T0_period();
