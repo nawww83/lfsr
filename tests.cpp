@@ -270,6 +270,46 @@ void test_lfsr_hash_coverage_4() {
     std::cout << " All Ok! Completed.\n";
 }
 
+void test_random_generator_next_back() {
+    std::cout << "Wait for next-back PRNG v3 test...\n";	
+
+    lfsr_rng_3::Generators g;
+    rnd_n::GeometricDistribution<int> r(0.3);
+	r.seed();
+
+    auto state_conversion = [](lfsr8::u32x4 st) {
+        lfsr8::u16x8 st1;
+        st1[0] = st[0];
+        st1[1] = st[0] >> 16;
+        st1[2] = st[1];
+        st1[3] = st[1] >> 16;
+
+        st1[4] = st[2];
+        st1[5] = st[2] >> 16;
+        st1[6] = st[3];
+        st1[7] = st[3] >> 16;
+
+        return st1;
+    };
+
+    auto st = rnd_n::get_random_u32x4<4>(r);
+    const auto st_c = state_conversion(st);
+    g.seed(st_c);
+
+    const int n = 500'000;
+
+    const auto init_state = g.peek_u64();
+    lfsr8::u64 h = 0;
+    for (int i=0; i<n; ++i) {
+        h ^= g.next_u64();
+    }
+    for (int i=0; i<n; ++i) {
+        h ^= g.back_u64();
+    }
+    assert(init_state == g.peek_u64());
+    std::cout << " All Ok! Completed.\n";
+}
+
 void test_random_generators() {
 	// Random generator infinite test
 	#define gen_version 3

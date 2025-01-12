@@ -289,6 +289,8 @@ void test_total_period();
 
 void test_random_generators();
 
+void test_random_generator_next_back();
+
 void find_lfsr_coefficients_T0_period();
 
 void find_lfsr_coefficients_T1_period();

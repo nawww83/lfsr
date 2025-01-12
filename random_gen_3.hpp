@@ -13,6 +13,8 @@
 #include <numeric>
 #include <array>
 
+#include <iostream>
+
 namespace lfsr_rng_3 {
 
 using u16 = lfsr8::u16;
@@ -95,7 +97,7 @@ inline void decrement(std::array<u32, N>& v) {
 template <typename T, size_t N>
 inline void modulo(std::array<T, N>& v, const std::array<int, N>& p) {
     for (size_t i=0; auto& el : p) {
-        v[i++] %= el;
+        v[i++] %= static_cast<T>(el);
     }
 }
 
@@ -295,27 +297,29 @@ public:
             gp3.set_state(refs[2]);
             gp4.set_state(refs[3]);
             std::array<u16, 4> i {i01, i02, i03, i04};
-            while (true) {
+            for (;;) {
                 gp1.next(i[0]);
                 gp2.next(i[1]);
                 gp3.next(i[2]);
                 gp4.next(i[3]);
+                // Модуляция пилообразным кодом.
+                sawtooth(i, primes);
                 // Остаток от деления mod(p^4 - 1 , q) не равен нулю => мы проходим все индексы i in [0, q),
                 // когда LFSR генератор находится в одном и том же опорном состоянии.
                 // Получаем набор случайных периодов T[i] так, что их сумма неслучайна и равна q*T0, где q - период "пилы".
-                // Модуляция пилообразным кодом.
-                sawtooth(i, primes);
                 // Но ключевой момент рандомизации периодоы:
                 // мы будем проходить почти все i, кроме одного => устанавливаем ограничение на суммарный период T[j] = sum_of(All i except last one) < q*T0.
                 for (int j=0; j<4; ++j) {
                     const bool is_matched = is_state_low(refs[j], j);
-                    Tref[2*j] = !is_matched ? Tref[2*j] : (Tc[2*j] < primes_duplicates[2*j]*Tmax[j] ? Tc[2*j] : Tref[2*j]);
-                    ii_back_saw[2*j] = !is_matched ? ii_back_saw[2*j] : i[j];
+                    const bool is_good_T = Tc[2*j] < primes_duplicates[2*j]*Tmax[j];
+                    Tref[2*j] = !is_matched ? Tref[2*j] : (is_good_T ? Tc[2*j] : Tref[2*j]);
+                    ii_back_saw[2*j] = !is_matched ? ii_back_saw[2*j] : (is_good_T ? i[j] : ii_back_saw[2*j]);
                 }
                 for (int j=0; j<4; ++j) {
                     const bool is_matched = is_state_high(refs[j], j);
-                    Tref[2*j+1] = !is_matched ? Tref[2*j+1] : (Tc[2*j+1] < primes_duplicates[2*j+1]*Tmax[j] ? Tc[2*j+1] : Tref[2*j+1]);
-                    ii_back_saw[2*j + 1] = !is_matched ? ii_back_saw[2*j + 1] : i[j];
+                    const bool is_good_T = Tc[2*j+1] < primes_duplicates[2*j+1]*Tmax[j];
+                    Tref[2*j+1] = !is_matched ? Tref[2*j+1] : (is_good_T ? Tc[2*j+1] : Tref[2*j+1]);
+                    ii_back_saw[2*j + 1] = !is_matched ? ii_back_saw[2*j + 1] : (is_good_T ? i[j] : ii_back_saw[2*j + 1]);
                 }
                 increment(Tc);
                 // Проверяем не вышли ли все счетчики за грани допустимого диапазона.
@@ -367,6 +371,12 @@ public:
         gp2.set_state(refs[1]);
         gp3.set_state(refs[2]);
         gp4.set_state(refs[3]);
+        // std::cout << "ii back saw: \n";
+        // std::cout << ii_back_saw[0] << ", " << ii_back_saw[1] << ", " << ii_back_saw[2] << ", " << ii_back_saw[3] <<
+        // ", " << ii_back_saw[4] << ", " << ii_back_saw[5] << ", " << ii_back_saw[6] << ", " << ii_back_saw[7] << '\n';
+
+        // std::cout << Tref[0] << ", " << Tref[1] << ", " << Tref[2] << ", " << Tref[3] <<
+        // ", " << Tref[4] << ", " << Tref[5] << ", " << Tref[6] << ", " << Tref[7] << '\n';
     }
 
     /**
@@ -392,8 +402,12 @@ public:
             sawtooth(ii_saw, primes_duplicates);
             // Сбрасываем счетчик и генератор "пилы", если период LFSR был достигнут.
             for (int j=0; j<8; ++j) {
-                ii_saw[j] = (Tc[j] != Tref[j]) ? ii_saw[j] : ii0_saw[j];
-                Tc[j] = (Tc[j] != Tref[j]) ? Tc[j] : 0;
+                const bool is_matched = Tc[j] == Tref[j];
+                // if (is_matched) {
+                //     std::cout << "next: matched: j: " << j << ", ii saw: " << ii_saw[j] << '\n';
+                // }
+                ii_saw[j] = !is_matched ? ii_saw[j] : ii0_saw[j];
+                Tc[j] = !is_matched ? Tc[j] : 0;
             }
             increment(Tc);
             //
@@ -411,8 +425,12 @@ public:
         for (int i=0; i<4; ++i) {
             decrement(Tc);
             for (int j=0; j<8; ++j) {
-                ii_saw[j] = (Tc[j] == 0) ? ii_back_saw[j] + 1 : ii_saw[j];
-                Tc[j] = (Tc[j] == 0) ? Tref[j] : Tc[j];
+                const bool is_matched = Tc[j] == 0;
+                // if (is_matched) {
+                //     std::cout << "back: matched: j: " << j << ", ii saw: " << ii_saw[j] << '\n';
+                // }
+                ii_saw[j] = is_matched ? ii_back_saw[j] : ii_saw[j];
+                Tc[j] = is_matched ? Tref[j] : Tc[j];
             }
             undo_sawtooth(ii_saw, primes_duplicates);
             gp1.back(ii_saw[0], ii_saw[1]);
@@ -428,6 +446,12 @@ public:
                 x |= static_cast<u64>(mSt[j] ^ mSt[j+4]) << (12 - 4*j + 16*i);
             }
         }
+        return x;
+    }
+
+    u64 peek_u64() {
+        const auto x = next_u64();
+        back_u64();
         return x;
     }
 };
