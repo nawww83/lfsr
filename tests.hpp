@@ -252,16 +252,18 @@ void test_next_back_inner() {
 			K = rnd_n::get_random_paired_coeffs<p>(r);
 			g.set_K(K);
 			g.set_unit_state();
-			g.saturate(saturation);
+			for (int i=0; i<saturation; ++i) {
+				g.next();
+			}
 			const int max_i = 32 + ((16383*iter)/iters);
 			const auto ref = g.get_state();
 			for (int i=0; i<max_i; ++i) {
 				g.next(i % p, i % p); // mod p: keep linearity
-				v.push_back( g.get_cell(check_pos) );
+				v.push_back( g.get_state()[check_pos] );
 			}
 			bool result = true;
 			for (int i=0; i<max_i; ++i) {
-				result &= (v.back() == g.get_cell(check_pos));
+				result &= (v.back() == g.get_state()[check_pos]);
 				g.back((max_i - 1 - i) % p, (max_i - 1 - i) % p); // mod p: keep linearity
 				v.pop_back();
 			}
