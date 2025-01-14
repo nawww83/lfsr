@@ -293,6 +293,22 @@ void test_random_generator_next_back();
 
 void find_lfsr_coefficients_T0_period();
 
+void test_some_poly_1();
+
+void test_some_poly_2();
+
+void test_some_poly_3();
+
+void test_some_poly_4();
+
+void test_some_poly_5();
+
+void test_some_poly_6();
+
+void test_some_poly_7();
+
+void test_some_poly_8();
+
 void find_lfsr_coefficients_T1_period();
 
 void test_lfsr_hash_coverage_1();

@@ -111,6 +111,102 @@ void find_lfsr_coefficients_T0_period() {
     }
 }
 
+void test_some_poly_1() {
+    constexpr int p = 19;
+    constexpr int m = 4;
+    const u64 T0 = std::pow(p, m) - 1;
+    STATE<m> K = {9, 5, 2, 0};
+	LFSR<p, m> g(K);
+    g.set_K(K);
+    g.set_state(K);
+    const auto T = calculate_period(g);
+    assert(T == T0);
+}
+
+void test_some_poly_2() {
+    constexpr int p = 19;
+    constexpr int m = 4;
+    const u64 T0 = std::pow(p, m) - 1;
+    STATE<m> K = {4, 2, 2, 6};
+	LFSR<p, m> g(K);
+    g.set_K(K);
+    g.set_state(K);
+    const auto T = calculate_period(g);
+    assert(T == T0);
+}
+
+void test_some_poly_3() {
+    constexpr int p = 17;
+    constexpr int m = 4;
+    const u64 T0 = std::pow(p, m) - 1;
+    STATE<m> K = {3, 4, 2, 1};
+	LFSR<p, m> g(K);
+    g.set_K(K);
+    g.set_state(K);
+    const auto T = calculate_period(g);
+    assert(T == T0);
+}
+
+void test_some_poly_4() {
+    constexpr int p = 17;
+    constexpr int m = 4;
+    const u64 T0 = std::pow(p, m) - 1;
+    STATE<m> K = {6, 1, 2, 1};
+	LFSR<p, m> g(K);
+    g.set_K(K);
+    g.set_state(K);
+    const auto T = calculate_period(g);
+    assert(T == T0);
+}
+
+void test_some_poly_5() {
+    constexpr int p = 17;
+    constexpr int m = 4;
+    const u64 T0 = std::pow(p, m) - 1;
+    STATE<m> K = {3, 2, 3, 4};
+	LFSR<p, m> g(K);
+    g.set_K(K);
+    g.set_state(K);
+    const auto T = calculate_period(g);
+    assert(T == T0);
+}
+
+void test_some_poly_6() {
+    constexpr int p = 17;
+    constexpr int m = 4;
+    const u64 T0 = std::pow(p, m) - 1;
+    STATE<m> K = {6, 2, 0, 7};
+	LFSR<p, m> g(K);
+    g.set_K(K);
+    g.set_state(K);
+    const auto T = calculate_period(g);
+    assert(T == T0);
+}
+
+void test_some_poly_7() {
+    constexpr int p = 13;
+    constexpr int m = 4;
+    const u64 T0 = std::pow(p, m) - 1;
+    STATE<m> K = {2, 3, 1, 1};
+	LFSR<p, m> g(K);
+    g.set_K(K);
+    g.set_state(K);
+    const auto T = calculate_period(g);
+    assert(T == T0);
+}
+
+void test_some_poly_8() {
+    constexpr int p = 13;
+    constexpr int m = 4;
+    const u64 T0 = std::pow(p, m) - 1;
+    STATE<m> K = {2, 0, 1, 7};
+	LFSR<p, m> g(K);
+    g.set_K(K);
+    g.set_state(K);
+    const auto T = calculate_period(g);
+    assert(T == T0);
+}
+
 void find_lfsr_coefficients_T1_period() {
     constexpr int p = 13;
     constexpr int m = 4;

@@ -29,8 +29,15 @@ int main() {
 	// test_total_period();
 	// test_random_generators();
 	test_random_generator_next_back();
-
-	find_lfsr_coefficients_T0_period();
+	// find_lfsr_coefficients_T0_period();
+	test_some_poly_1();
+	test_some_poly_2();
+	test_some_poly_3();
+	test_some_poly_4();
+	test_some_poly_5();
+	test_some_poly_6();
+	test_some_poly_7();
+	test_some_poly_8();
     
 	return 0;
 }
