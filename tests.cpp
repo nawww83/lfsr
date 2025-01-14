@@ -92,8 +92,8 @@ void test_total_period() {
 }
 
 void find_lfsr_coefficients_T0_period() {
-    constexpr int p = 13;
-    constexpr int m = 4;
+    constexpr int p = 2;
+    constexpr int m = 5;
     std::cout << "LFSR with modulo p: " << p << ", length m: " << m << std::endl;
     {
         std::cout << "Wait for maximal period T0 = p^m - 1 polynomial look up...\n";
@@ -296,7 +296,7 @@ void test_random_generator_next_back() {
     const auto st_c = state_conversion(st);
     g.seed(st_c);
 
-    const int n = 500'000;
+    const int n = 2 * std::pow(19, 4) * 11;
 
     const auto init_state = g.peek_u64();
     lfsr8::u64 h = 0;

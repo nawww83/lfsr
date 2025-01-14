@@ -76,7 +76,7 @@ public:
             c = _mm_add_epi16(c, inp);
             _mm_store_si128((__m128i*)&m_state[0], c);
             for (int i=0; i<m; ++i) {
-                m_state[i] %= p;
+                m_state[i] %= static_cast<SAMPLE>(p);
             }
         } else {
             __m128i a = _mm_set1_epi32(m_state[m-1]);
@@ -90,21 +90,21 @@ public:
             c = _mm_add_epi32(c, inp);
             _mm_store_si128((__m128i*)&m_state[0], c);
             for (int i=0; i<m; ++i) {
-                m_state[i] %= static_cast<u16>(p);
+                m_state[i] %= static_cast<SAMPLE>(p);
             }
         }
 #else // Для процессора общего назначения.
         const SAMPLE m_v = m_state[m-1];
         for (int i=m-1; i>0; i--) {
-            m_state[i] = (m_state[i-1] + m_v*m_K[i]) % static_cast<u16>(p);
+            m_state[i] = (m_state[i-1] + m_v*m_K[i]) % static_cast<SAMPLE>(p);
         }
-        m_state[0] = (input + m_v*m_K[0]) % static_cast<u16>(p);
+        m_state[0] = (input + m_v*m_K[0]) % static_cast<SAMPLE>(p);
 #endif
     }
     void back(SAMPLE input=0) {
-        const SAMPLE m_v = (m_inv_K0*(m_state[0] - input + p)) % static_cast<u16>(p);
+        const SAMPLE m_v = (m_inv_K0*(m_state[0] - input + static_cast<SAMPLE>(p))) % static_cast<SAMPLE>(p);
         for (int i=0; i<m-1; i++) {
-            m_state[i] = (m_state[i+1] - m_v*m_K[i+1] + p*p) % static_cast<u16>(p);
+            m_state[i] = (m_state[i+1] - m_v*m_K[i+1] + static_cast<SAMPLE>(p)*static_cast<SAMPLE>(p)) % static_cast<SAMPLE>(p);
         }
         m_state[m-1] = m_v;
     }
@@ -139,7 +139,7 @@ private:
         assert(x != 0);
         m_inv_K0 = 1;
         for (;;) {
-            if (((x*m_inv_K0) % p) == u16(1)) {
+            if (((x*m_inv_K0) % static_cast<SAMPLE>(p)) == SAMPLE(1)) {
                 break;
             }
             m_inv_K0++;

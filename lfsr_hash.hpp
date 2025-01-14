@@ -2,6 +2,7 @@
 
 #include "lfsr.hpp"
 #include <utility>
+#include <cstddef> // size_t
 
 namespace lfsr_hash {
 

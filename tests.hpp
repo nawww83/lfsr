@@ -138,7 +138,7 @@ inline u64 calculate_period(LFSR<p, m>& g) {
 			return T;
 		}
 	}
-	return T0;
+	return 0;
 }
 
 template <int p, int m>
