@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cmath>
 #include <cstring>
+#include <utility>
 #include <limits>
 #include <vector>
 #include <algorithm>
@@ -107,7 +108,7 @@ inline void increment_state(STATE<m>& x) {
 }
 
 template <int p, int m>
-inline u64 calculate_period(LFSR<p, m>& g) {
+inline std::pair<bool, u64> calculate_period(LFSR<p, m>& g) {
 	const u64 T0 = std::pow(p, m) - 1;
 	const auto multipliers = factor(T0);
     std::set<u64> divisors{1}; // must be sorted!
@@ -135,10 +136,10 @@ inline u64 calculate_period(LFSR<p, m>& g) {
 			T++;
 		}
 		if (g.is_state(ref)) {
-			return T;
+			return {true, T};
 		}
 	}
-	return 0;
+	return {false, 0};
 }
 
 template <int p, int m>
@@ -170,7 +171,7 @@ inline auto research_periods(LFSR<p, m>& g, u64 max_T, int iters) {
 	while (true) {
 		auto st = get_random_state<p, m>(r);
 		g.set_state(st);
-		auto T = calculate_period(g);
+		const auto [is_divisor, T] = calculate_period<p, m>(g);
 		if (T < 1) {
 			std::cout << "Abnormal period detected! Skip it.\n";
 			continue;
@@ -216,20 +217,23 @@ auto find_T0_polynomial(u64& T) { // maximal period Tmax = T0 = p^m - 1.
 	LFSR<p, m> g(K);
 	rnd_n::GeometricDistribution<int> r(0.3);
 	r.seed();
-	T = 1;
+	T = 0;
 	const u64 T_ref = std::pow(p, m) - 1;
-	while (T != T_ref) {
+	for (;;) {
 		K = get_random_coeffs<p, m>(r);
 		g.set_K(K);
 		g.set_state(K);
-		T = calculate_period(g);
-        if (T != T_ref) {
+		const auto [is_divisible, T_] = calculate_period<p, m>(g);
+        if (T_ != T_ref) {
             std::cout << " ... skipped coefficients K: (";
             for (int i=0; i<m-1; ++i) {
                 std::cout << K[i] << ", ";
             }
             std::cout << K[m-1] << ")\n";
-        }
+        } else {
+			T = T_;
+			break;
+		}
 	}
 	return K;
 }
@@ -293,21 +297,16 @@ void test_random_generator_next_back();
 
 void find_lfsr_coefficients_T0_period();
 
-void test_some_poly_1();
-
-void test_some_poly_2();
-
-void test_some_poly_3();
-
-void test_some_poly_4();
-
-void test_some_poly_5();
-
-void test_some_poly_6();
-
-void test_some_poly_7();
-
-void test_some_poly_8();
+template <int p, int m>
+void test_some_poly(STATE<m> K) {
+    const u64 T0 = std::pow(p, m) - 1;
+	LFSR<p, m> g(K);
+    g.set_K(K);
+    g.set_state(K);
+    const auto [is_divisor, T] = calculate_period(g);
+    assert(is_divisor);
+    assert(T == T0);
+}
 
 void find_lfsr_coefficients_T1_period();
 

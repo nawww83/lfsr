@@ -30,14 +30,14 @@ int main() {
 	// test_random_generators();
 	test_random_generator_next_back();
 	// find_lfsr_coefficients_T0_period();
-	test_some_poly_1();
-	test_some_poly_2();
-	test_some_poly_3();
-	test_some_poly_4();
-	test_some_poly_5();
-	test_some_poly_6();
-	test_some_poly_7();
-	test_some_poly_8();
+	test_some_poly<19, 4>(STATE<4>{9, 5, 2, 0});
+	test_some_poly<19, 4>(STATE<4>{4, 2, 2, 6});
+	test_some_poly<17, 4>(STATE<4>{3, 4, 2, 1});
+	test_some_poly<17, 4>(STATE<4>{6, 1, 2, 1});
+	test_some_poly<17, 4>(STATE<4>{3, 2, 3, 4});
+	test_some_poly<17, 4>(STATE<4>{6, 2, 0, 7});
+	test_some_poly<13, 4>(STATE<4>{2, 3, 1, 1});
+	test_some_poly<13, 4>(STATE<4>{2, 0, 1, 7});
     
 	return 0;
 }
