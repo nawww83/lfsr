@@ -1,5 +1,16 @@
 #pragma once
 
+/**
+ * @author Новиков А.В.
+ *
+ * Генератор LFSR в поле GF(p^m) с числом ячеек m = [1, 8] и простым модулем p = [2, 256*256).
+ * Реализован код для SSE4.1 архитектуры x86_64.
+ * Реализованы:
+ *  - Генератор общего назначения, m = [1, 8], p = [2, 256) для m = [5, 8] и p = [2, 256*256) для m = [1, 4].
+ *  - Сдвоенный генератор с фиксированным m = 4, p = [2, 256). Фактически, это два независимых генератора,
+ *  реализованных на одном регистре 128-бит в коде SSE4.1.
+*/
+
 #include <cstdint>
 #include <cassert>
 #include <array>
@@ -31,10 +42,11 @@ public:
 };
 
 /**
- * @brief Класс генератор LFSR общего назначения в поле GF(p^m).
- * Хранит числа в 32-битных ячейках.
- * p должно быть простым числом в интервале [2, 256).
- * m - натуральное число на отрезке [1,8].
+ * @brief Генератор LFSR общего назначения в поле GF(p^m).
+ * p должно быть простым числом в итервале:
+ *   [2, 256) для длин регистра (4, 8].
+ *   [2, 256*256) для длин регистра [1, 4].
+ * m - длина регистра [1, 8].
  */
 template <int p, int m>
 class LFSR {
@@ -50,18 +62,27 @@ public:
             static_assert(p < 256*256);
         }
         static_assert(p > 1);
-        m_calc_inv_K0();
+        m_calculate_inverse_of_K();
     };
+
     void set_state(STATE st) {
         m_state = st;
     }
+
     void set_unit_state() {
         m_state = {1};
     }
+
     void set_K(STATE K) {
         m_K = K;
-        m_calc_inv_K0();
+        m_calculate_inverse_of_K();
     }
+
+    /**
+     * @brief Сделать шаг вперед (один такт генератора).
+     * @param input Входной символ (по модулю p), который подается
+     * на вход генератора.
+     */
     void next(SAMPLE input=0) {
 #ifdef USE_SSE
         if constexpr (m > 4) {
@@ -101,6 +122,12 @@ public:
         m_state[0] = (input + m_v*m_K[0]) % static_cast<SAMPLE>(p);
 #endif
     }
+
+    /**
+     * @brief Сделать шаг назад (один такт генератора). Обратно к next(input).
+     * @param input Входной символ (по модулю p), который подается
+     * на вход генератора.
+     */
     void back(SAMPLE input=0) {
         const SAMPLE m_v = (m_inv_K0*(m_state[0] - input + static_cast<SAMPLE>(p))) % static_cast<SAMPLE>(p);
         for (int i=0; i<m-1; i++) {
@@ -108,11 +135,22 @@ public:
         }
         m_state[m-1] = m_v;
     }
+
+    /**
+     * @brief Насытить генератор.
+     * @param q Количество тактов.
+     */
     void saturate(int q=m) {
         for (int i=0; i<q; ++i) {
             next();
         }
     }
+
+    /**
+     * @brief Является ли заданное состояние текущим состоянием генератора.
+     * @param st Заданное состояние.
+     * @return Да/нет.
+     */
     bool is_state(STATE st) const {
 #ifdef USE_SSE
         bool res = true;
@@ -124,17 +162,25 @@ public:
         return (st == m_state);
 #endif
     }
+
     auto get_state() const {
         return m_state;
     }
+
     auto get_cell(int idx) const {
         return m_state[idx];
     }
 private:
     alignas(16) STATE m_state {};
+    
     alignas(16) STATE m_K {};
+    
     SAMPLE m_inv_K0 {};
-    void m_calc_inv_K0() {
+    
+     /**
+     * @brief Вычисляется обратный (по умножению) коэффициент.
+     */
+    void m_calculate_inverse_of_K() {
         const auto x = m_K[0];
         assert(x != 0);
         m_inv_K0 = 1;
@@ -148,27 +194,41 @@ private:
 };
 
 /**
- * @brief Класс сдвоенного LFSR генератора длиной m = 4*2.
+ * @brief Класс сдвоенного LFSR генератора общей длиной m = 4*2.
  * Хранит числа в 16-битных ячейках.
- * Цель данного генератора: оптимизировать использование основного LFSR класса, если требуется парная работа генераторов.
- * Генераторы работают независимо, но в одном 128-битном регистре.
+ * Цель данного генератора: оптимизировать использование основного класса (см. LFSR), если
+ * требуется парная работа генераторов. Генераторы работают независимо, но в
+ * одном 128-битном регистре.
  */
 template <int p>
 class LFSR_paired_2x4 {
     static_assert(p < 256);
     static_assert(p > 1);
 public:
-    constexpr LFSR_paired_2x4(u16x8 K): m_K(K) {m_calc_inv_K();};
+    /**
+     * @brief Конструктор.
+     * @param K Коэффициенты двух порождающих полиномов в поле GF(p^4).
+     */
+    constexpr LFSR_paired_2x4(u16x8 K): m_K(K) {m_calculate_inverse_of_K();};
+
     void set_state(u16x8 state) {
         m_state = state;
     }
+
     void set_unit_state() {
         m_state = {1, 0, 0, 0, 1, 0, 0, 0};
     }
+
     void set_K(u16x8 K) {
         m_K = K;
-        m_calc_inv_K();
+        m_calculate_inverse_of_K();
     }
+
+    /**
+     * @brief Сделать шаг вперед (один такт генератора).
+     * @param input Входной символ (по модулю p), который одинаково
+     * подается на оба генератора.
+     */
     void next(u16 input=0) {
 #ifdef USE_SSE
         __m128i a = _mm_set1_epi16(m_state[3]);
@@ -200,6 +260,12 @@ public:
         m_state[4] = (input + m_v7*m_K[4]) % static_cast<u16>(p);
 #endif
     }
+
+    /**
+     * @brief Сделать шаг вперед (один такт генератора).
+     * @param inp1 Входной символ (по модулю p) первого генератора.
+     * @param inp2 Входной символ (по модулю p) второго генератора.
+     */
     void next(u16 inp1, u16 inp2) {
 #ifdef USE_SSE
         __m128i a = _mm_set1_epi16(m_state[3]);
@@ -234,6 +300,12 @@ public:
         m_state[4] = (inp2 + m_v7*m_K[4]) % static_cast<u16>(p);
 #endif
     }
+
+    /**
+     * @brief Сделать шаг назад (один такт генератора). Обратно к next(inp1, inp2).
+     * @param inp1 Входной символ (по модулю p) первого генератора.
+     * @param inp2 Входной символ (по модулю p) второго генератора.
+     */
     void back(u16 inp1, u16 inp2) {
 #ifdef USE_SSE
         __m128i mask1 = _mm_slli_si128(_mm_set1_epi16(-1), 2);
@@ -291,9 +363,16 @@ public:
         m_state[7] = m_v_2;
 #endif
     }
+
     auto get_state() const {
         return m_state;
     }
+    
+    /**
+     * @brief Совпадает ли заданное состояние с текущим "нижним" состоянием генератора.
+     * @param st Заданное состояние.
+     * @return Да/нет.
+     */
     bool is_state_low(u16x8 st) const {
         bool res = true;
         for (int i=0; i<4; ++i) {
@@ -301,6 +380,12 @@ public:
         }
         return res;
     }
+    
+     /**
+     * @brief Совпадает ли заданное состояние с текущим "верхним" состоянием генератора.
+     * @param st Заданное состояние.
+     * @return Да/нет.
+     */
     bool is_state_high(u16x8 st) const {
         bool res = true;
         for (int i=0; i<4; ++i) {
@@ -309,10 +394,16 @@ public:
         return res;
     }
 private:
-    alignas(16) u16x8 m_state {}; // must be aligned.
+    alignas(16) u16x8 m_state {};
+
     alignas(16) u16x8 m_K {};
+    
     alignas(16) u16x8 m_inv_K {};
-    void m_calc_inv_K() {
+    
+     /**
+     * @brief Вычисляются обратные (по умножению) коэффициенты.
+     */
+    void m_calculate_inverse_of_K() {
         const auto x0 = m_K[0];
         const auto x4 = m_K[4];
         assert(x0 != 0);
