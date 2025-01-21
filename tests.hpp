@@ -239,7 +239,95 @@ auto find_T0_polynomial(u64& T) { // maximal period Tmax = T0 = p^m - 1.
 }
 
 template <int p>
-void test_next_back_inner() {
+void test_next_back_inner_1() {
+	STATE<4> K = {1, 0, 0, 0};
+	LFSR<p, 4> g(K);
+	using SAMPLE = lfsr8::MType<4>::SAMPLE;
+	rnd_n::GeometricDistribution<int> r(0.3);
+	r.seed();
+	const int iters = 256;
+	auto sub_test = [&g, &K, &r](int saturation){
+		int iter = 0;
+		const int check_pos = 0;
+		std::vector<SAMPLE> v{};
+		assert(check_pos >= 0);
+		assert(check_pos < 4);
+		while (iter < iters) {
+			K = rnd_n::get_random_coeffs<p, 4>(r);
+			g.set_K(K);
+			g.set_unit_state();
+			for (int i=0; i<saturation; ++i) {
+				g.next();
+			}
+			const int max_i = 32 + ((16383*iter)/iters);
+			const auto ref = g.get_state();
+			for (int i=0; i<max_i; ++i) {
+				g.next(i % p); // mod p: keep linearity
+				v.push_back( g.get_state()[check_pos] );
+			}
+			bool result = true;
+			for (int i=0; i<max_i; ++i) {
+				result &= (v.back() == g.get_state()[check_pos]);
+				g.back((max_i - 1 - i) % p); // mod p: keep linearity
+				v.pop_back();
+			}
+			assert(result);
+			assert(g.is_state(ref));
+			iter++;
+		}
+	};
+	sub_test(8);
+	sub_test(9);
+	sub_test(12);
+	sub_test(14);
+}
+
+template <int p>
+void test_next_back_inner_2() {
+	STATE<8> K = {1, 0, 0, 0, 0, 0, 0, 0};
+	LFSR<p, 8> g(K);
+	using SAMPLE = lfsr8::MType<8>::SAMPLE;
+	rnd_n::GeometricDistribution<int> r(0.3);
+	r.seed();
+	const int iters = 256;
+	auto sub_test = [&g, &K, &r](int saturation){
+		int iter = 0;
+		const int check_pos = 0;
+		std::vector<SAMPLE> v{};
+		assert(check_pos >= 0);
+		assert(check_pos < 8);
+		while (iter < iters) {
+			K = rnd_n::get_random_coeffs<p, 8>(r);
+			g.set_K(K);
+			g.set_unit_state();
+			for (int i=0; i<saturation; ++i) {
+				g.next();
+			}
+			const int max_i = 32 + ((16383*iter)/iters);
+			const auto ref = g.get_state();
+			for (int i=0; i<max_i; ++i) {
+				g.next(i % p); // mod p: keep linearity
+				v.push_back( g.get_state()[check_pos] );
+			}
+			bool result = true;
+			for (int i=0; i<max_i; ++i) {
+				result &= (v.back() == g.get_state()[check_pos]);
+				g.back((max_i - 1 - i) % p); // mod p: keep linearity
+				v.pop_back();
+			}
+			assert(result);
+			assert(g.is_state(ref));
+			iter++;
+		}
+	};
+	sub_test(8);
+	sub_test(9);
+	sub_test(12);
+	sub_test(14);
+}
+
+template <int p>
+void test_next_back_inner_pair() {
 	STATE<8> K = {1, 0, 0, 0, 1, 0, 0, 0};
 	LFSR_paired<p> g(K);
 	using SAMPLE = lfsr8::MType<8>::SAMPLE;

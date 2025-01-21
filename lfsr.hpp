@@ -128,12 +128,99 @@ public:
      * @param input Входной символ (по модулю p), который подается
      * на вход генератора.
      */
-    void back(SAMPLE input=0) {
-        const SAMPLE m_v = (m_inv_K0*(m_state[0] - input + static_cast<SAMPLE>(p))) % static_cast<SAMPLE>(p);
+    void back(SAMPLE inp=0) {
+#ifdef USE_SSE
+        if constexpr (m > 4) {
+            __m128i mask1 = _mm_slli_si128(_mm_set1_epi16(-1), 2);
+            __m128i input = _mm_andnot_si128( mask1, _mm_set1_epi16(inp) );
+            __m128i state = _mm_andnot_si128( mask1, _mm_set1_epi16(m_state[0]) );
+            __m128i a = _mm_sub_epi16(state, input);
+
+            __m128i prime = _mm_andnot_si128( mask1, _mm_set1_epi16(p) );
+            a = _mm_add_epi16(a, prime);
+
+            __m128i i_coeffs = _mm_load_si128((const __m128i*)&m_inv_K[0]);
+            a = _mm_mullo_epi16(a, i_coeffs);
+            a = _mm_add_epi16(a, _mm_slli_si128(a, 2));
+            a = _mm_add_epi16(a, _mm_slli_si128(a, 4));
+            a = _mm_add_epi16(a, _mm_slli_si128(a, 8));
+            {
+                alignas(16) u16x8 tmp;
+                _mm_store_si128((__m128i*)&tmp[0], a);
+                for (int i=0; i<m; ++i) {
+                    tmp[i] %= static_cast<SAMPLE>(p);
+                }
+                a = _mm_load_si128((const __m128i*)&tmp[0]);
+            }
+            __m128i mask = _mm_set_epi16(0, 0, 0, 0, 0, 0, 0, -1);
+            mask = _mm_slli_si128(mask, 2*(m-1));
+            mask = _mm_andnot_si128(mask, _mm_set1_epi16(-1));
+
+            __m128i d = _mm_load_si128((const __m128i*)&m_state[0]);
+            d = _mm_and_si128(mask, _mm_srli_si128(d, 2));
+
+            __m128i coeffs = _mm_load_si128((const __m128i*)&m_K[0]);
+            coeffs = _mm_and_si128(mask, _mm_srli_si128(coeffs, 2));
+
+            __m128i mask2 = _mm_set_epi16(0, 0, 0, 0, 0, 0, 0, -1);
+            mask2 = _mm_slli_si128(mask2, 2*(m-1));
+            coeffs = _mm_add_epi16(coeffs, mask2);
+
+            a = _mm_sub_epi16(d, _mm_mullo_epi16(a, coeffs));
+            a = _mm_add_epi16(a, _mm_and_si128(mask, _mm_set1_epi16(static_cast<SAMPLE>(p*p))));
+            _mm_store_si128((__m128i*)&m_state[0], a);
+            for (int i=0; i<m; ++i) {
+                m_state[i] %= static_cast<SAMPLE>(p);
+            }
+        } else {
+            __m128i mask1 = _mm_slli_si128(_mm_set1_epi32(-1), 4);
+            __m128i input = _mm_andnot_si128( mask1, _mm_set1_epi32(inp) );
+            __m128i state = _mm_andnot_si128( mask1, _mm_set1_epi32(m_state[0]) );
+            __m128i a = _mm_sub_epi32(state, input);
+
+            __m128i prime = _mm_andnot_si128( mask1, _mm_set1_epi32(p) );
+            a = _mm_add_epi32(a, prime);
+
+            __m128i i_coeffs = _mm_load_si128((const __m128i*)&m_inv_K[0]);
+            a = _mm_mullo_epi32(a, i_coeffs);
+            a = _mm_add_epi32(a, _mm_slli_si128(a, 4));
+            a = _mm_add_epi32(a, _mm_slli_si128(a, 8));
+            {
+                alignas(16) u32x4 tmp;
+                _mm_store_si128((__m128i*)&tmp[0], a);
+                for (int i=0; i<m; ++i) {
+                    tmp[i] %= static_cast<SAMPLE>(p);
+                }
+                a = _mm_load_si128((const __m128i*)&tmp[0]);
+            }
+            __m128i mask = _mm_set_epi32(0, 0, 0, -1);
+            mask = _mm_slli_si128(mask, 4*(m-1));
+            mask = _mm_andnot_si128(mask, _mm_set1_epi32(-1));
+
+            __m128i d = _mm_load_si128((const __m128i*)&m_state[0]);
+            d = _mm_and_si128(mask, _mm_srli_si128(d, 4));
+
+            __m128i coeffs = _mm_load_si128((const __m128i*)&m_K[0]);
+            coeffs = _mm_and_si128(mask, _mm_srli_si128(coeffs, 4));
+
+            __m128i mask2 = _mm_set_epi32(0, 0, 0, -1);
+            mask2 = _mm_slli_si128(mask2, 4*(m-1));
+            coeffs = _mm_add_epi32(coeffs, mask2);
+
+            a = _mm_sub_epi32(d, _mm_mullo_epi32(a, coeffs));
+            a = _mm_add_epi32(a, _mm_and_si128(mask, _mm_set1_epi32(static_cast<SAMPLE>(p*p))));
+            _mm_store_si128((__m128i*)&m_state[0], a);
+            for (int i=0; i<m; ++i) {
+                m_state[i] %= static_cast<SAMPLE>(p);
+            }
+        }
+#else
+        const SAMPLE m_v = (m_inv_K[0]*(m_state[0] - inp + static_cast<SAMPLE>(p))) % static_cast<SAMPLE>(p);
         for (int i=0; i<m-1; i++) {
             m_state[i] = (m_state[i+1] - m_v*m_K[i+1] + static_cast<SAMPLE>(p)*static_cast<SAMPLE>(p)) % static_cast<SAMPLE>(p);
         }
         m_state[m-1] = m_v;
+#endif
     }
 
     /**
@@ -175,7 +262,7 @@ private:
     
     alignas(16) STATE m_K {};
     
-    SAMPLE m_inv_K0 {};
+    alignas(16) STATE m_inv_K {};
     
      /**
      * @brief Вычисляется обратный (по умножению) коэффициент.
@@ -183,12 +270,12 @@ private:
     void m_calculate_inverse_of_K() {
         const auto x = m_K[0];
         assert(x != 0);
-        m_inv_K0 = 1;
+        m_inv_K[0] = 1;
         for (;;) {
-            if (((x*m_inv_K0) % static_cast<SAMPLE>(p)) == SAMPLE(1)) {
+            if (((x*m_inv_K[0]) % static_cast<SAMPLE>(p)) == SAMPLE(1)) {
                 break;
             }
-            m_inv_K0++;
+            m_inv_K[0]++;
         }
     }
 };
