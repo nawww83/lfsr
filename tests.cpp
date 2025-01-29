@@ -93,6 +93,60 @@ void test_total_period() {
     std::cout << " All Ok! Completed. Elapsed: " << dt*1e-9 << " s.\n";
 }
 
+void test_square_of_lfsr() {
+    std::cout << "Square of LFSR test\n";	
+    // static constexpr STATE K4 = {2, 3, 1, 1, 2, 0, 1, 7};    // p=13
+    STATE<4> K = {2, 3, 1, 1};
+	LFSR<13, 4> g(K);
+    {
+        g.set_unit_state();
+        g.square();
+        const auto squared_state_by_function = g.get_state();
+        g.set_unit_state();
+        assert(g.is_state(squared_state_by_function));
+    }
+    {
+        g.set_unit_state();
+        g.saturate(3);
+        g.square();
+        const auto squared_state_by_function = g.get_state();
+        g.set_unit_state();
+        g.saturate(3);
+        g.saturate(3);
+        assert(g.is_state(squared_state_by_function));
+    }
+    {
+        g.set_unit_state();
+        g.saturate(4);
+        g.square();
+        const auto squared_state_by_function = g.get_state();
+        g.set_unit_state();
+        g.saturate(4);
+        g.saturate(4);
+        assert(g.is_state(squared_state_by_function));
+    }
+    {
+        g.set_unit_state();
+        g.saturate(10);
+        g.square();
+        const auto squared_state_by_function = g.get_state();
+        g.set_unit_state();
+        g.saturate(10);
+        g.saturate(10);
+        assert(g.is_state(squared_state_by_function));
+    }
+    {
+        g.set_unit_state();
+        g.saturate(31);
+        g.square();
+        const auto squared_state_by_function = g.get_state();
+        g.set_unit_state();
+        g.saturate(31);
+        g.saturate(31);
+        assert(g.is_state(squared_state_by_function));
+    }
+}
+
 void find_lfsr_coefficients_T0_period() {
     constexpr int p = 2;
     constexpr int m = 5;

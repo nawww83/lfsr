@@ -405,3 +405,5 @@ void test_lfsr_hash_coverage_2();
 void test_lfsr_hash_coverage_3();
 
 void test_lfsr_hash_coverage_4();
+
+void test_square_of_lfsr();

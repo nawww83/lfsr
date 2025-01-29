@@ -38,6 +38,8 @@ int main() {
 	test_some_poly<17, 4>(STATE<4>{6, 2, 0, 7});
 	test_some_poly<13, 4>(STATE<4>{2, 3, 1, 1});
 	test_some_poly<13, 4>(STATE<4>{2, 0, 1, 7});
+
+	test_square_of_lfsr();
     
 	return 0;
 }

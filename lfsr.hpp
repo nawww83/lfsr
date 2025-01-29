@@ -224,6 +224,28 @@ public:
     }
 
     /**
+     * @brief Возвести в квадрат, то есть вычислить состояние (x^s)^2, где
+     * x^s - текущее состояние (некоторая степень s вспомогательной переменной x).
+     * Соответствует s итерациям next() - прямое вычисление (долго, если s - большое число).
+     */
+    void square() {
+        const STATE old_state = m_state;
+        for (int i=0; i<m; ++i) {
+            m_state[i] = 0;
+        }
+        for (int power=2*m-2; power>=0; --power) {
+            SAMPLE v = 0;
+            for (int i=0; i<power/2 + 1; ++i) {
+                const int j = power - i;
+                if ((j >= m) || (j < 0)) { continue;}
+                const SAMPLE tmp = (old_state[i] * old_state[j]) % SAMPLE(p);
+                v += (i != j) ? (2*tmp) % SAMPLE(p) : tmp; 
+            }
+            next(v);
+        }
+    }
+
+    /**
      * @brief Насытить генератор.
      * @param q Количество тактов.
      */
