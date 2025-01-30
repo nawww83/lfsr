@@ -147,6 +147,50 @@ void test_square_of_lfsr() {
     }
 }
 
+void test_mult_by_of_lfsr() {
+    std::cout << "Mult by of LFSR test\n";	
+    // static constexpr STATE K4 = {2, 3, 1, 1, 2, 0, 1, 7};    // p=13
+    STATE<4> K = {2, 3, 1, 1};
+	LFSR<13, 4> g(K);
+    {
+        g.set_unit_state();
+        g.saturate(17);
+        const auto state_s = g.get_state();
+        g.set_unit_state();
+        g.mult_by(state_s);
+        const auto state_st = g.get_state();
+        g.set_unit_state();
+        g.saturate(1*17);
+        assert(g.is_state(state_st));
+    }
+    {
+        g.set_unit_state();
+        g.saturate(17);
+        const auto state_s = g.get_state();
+        g.saturate(27);
+        const auto state_t = g.get_state();
+        g.set_state(state_s);
+        g.mult_by(state_t);
+        const auto state_st = g.get_state();
+        g.set_unit_state();
+        g.saturate(2*17 + 27);
+        assert(g.is_state(state_st));
+    }
+    {
+        g.set_unit_state();
+        g.saturate(17);
+        const auto state_s = g.get_state();
+        g.saturate(27);
+        const auto state_t = g.get_state();
+        g.set_state(state_t);
+        g.mult_by(state_s);
+        const auto state_st = g.get_state();
+        g.set_unit_state();
+        g.saturate(2*17 + 27);
+        assert(g.is_state(state_st));
+    }
+}
+
 void find_lfsr_coefficients_T0_period() {
     constexpr int p = 2;
     constexpr int m = 5;

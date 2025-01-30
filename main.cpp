@@ -40,6 +40,7 @@ int main() {
 	test_some_poly<13, 4>(STATE<4>{2, 0, 1, 7});
 
 	test_square_of_lfsr();
+	test_mult_by_of_lfsr();
     
 	return 0;
 }

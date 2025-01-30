@@ -246,6 +246,28 @@ public:
     }
 
     /**
+     * @brief Умножить текущее состояние x^s на некоторое другое состояние x^t.
+     * Итоговое состояние генератора становится равным x^(s+t).
+     * @param other Другое состояние x^t.
+     */
+    void mult_by(STATE other) {
+        const STATE old_state = m_state;
+        for (int i=0; i<m; ++i) {
+            m_state[i] = 0;
+        }
+        for (int power=2*m-2; power>=0; --power) {
+            SAMPLE v = 0;
+            for (int i=0; i<power+1; ++i) {
+                const int j = power - i;
+                if ((j >= m) || (j < 0)) { continue;}
+                if ((i >= m) || (i < 0)) { continue;}
+                v += (old_state[i] * other[j]) % SAMPLE(p); 
+            }
+            next(v);
+        }
+    }
+
+    /**
      * @brief Насытить генератор.
      * @param q Количество тактов.
      */
