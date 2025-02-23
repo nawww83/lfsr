@@ -273,7 +273,6 @@ auto find_T0_polynomial(u64& T) { // maximal period Tmax = T0 = p^m - 1.
 	for (;;) {
 		K = get_random_coeffs<p, m>(r);
 		g.set_K(K);
-		g.set_state(K);
 		const auto is_divisible = is_maximal_period<p, m>(g, T);
         if (!is_divisible) {
             std::cout << " ... skipped coefficients K: (";
