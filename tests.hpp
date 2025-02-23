@@ -10,6 +10,7 @@
 #include <set>
 #include <map>
 #include <bit>
+#include <bitset>
 #include <concepts>
 #include <charconv>
 
@@ -143,6 +144,57 @@ inline std::pair<bool, u64> calculate_period(LFSR<p, m>& g) {
 }
 
 template <int p, int m>
+inline bool is_maximal_period(LFSR<p, m>& g, u64& T) {
+	const u64 T0 = std::pow(p, m) - 1;
+	const auto multipliers = factor(T0);
+    std::set<u64> divisors{1}; // must be sorted!
+    //
+    for (const auto [t, c] : multipliers) {
+        u64 T_ = t;
+        std::set<u64> div_tmp{};
+        for (int i=0; i<c; ++i) {
+            div_tmp.insert(T_);
+            T_ *= t;
+        }
+        std::set<u64> d_copy = divisors;
+        for (auto d1 : d_copy) {
+            for (auto d2 : div_tmp) {
+                divisors.insert(d1*d2);
+            }
+        }
+    }
+    //
+	T = 0;
+	constexpr int num_of_bits = 64;
+	g.set_unit_state();
+	const auto ref = g.get_state();
+	LFSR<p, m> tmp_reg = g;
+	for (const u64 t : divisors) {
+		const auto& bits_str = std::bitset<num_of_bits>(t).to_string();
+		const int bit_width = bits_str.length();
+		tmp_reg.set_unit_state();
+		for (int i=0; i<bit_width; ++i) {
+			if (bits_str[i] == '0') continue;
+			g.set_unit_state();
+			g.next();
+			for (int c = 0; c < (num_of_bits-1-i); ++c) {
+				g.square();
+			}
+			tmp_reg.mult_by(g.get_state());
+		}
+		if (tmp_reg.is_state(ref) && (t != T0)) {
+			T = t;
+			return false;
+		}
+		if (tmp_reg.is_state(ref) && (t == T0)) {
+			T = t;
+			return true;
+		}
+	}
+	return false;
+}
+
+template <int p, int m>
 inline auto calculate_sawtooth_period(LFSR<p, m>& g, int q, int& i0) {
 	assert( q > 0 );
 	u64 T = 1;
@@ -218,20 +270,18 @@ auto find_T0_polynomial(u64& T) { // maximal period Tmax = T0 = p^m - 1.
 	rnd_n::GeometricDistribution<int> r(0.3);
 	r.seed();
 	T = 0;
-	const u64 T_ref = std::pow(p, m) - 1;
 	for (;;) {
 		K = get_random_coeffs<p, m>(r);
 		g.set_K(K);
 		g.set_state(K);
-		const auto [is_divisible, T_] = calculate_period<p, m>(g);
-        if (T_ != T_ref) {
+		const auto is_divisible = is_maximal_period<p, m>(g, T);
+        if (!is_divisible) {
             std::cout << " ... skipped coefficients K: (";
             for (int i=0; i<m-1; ++i) {
                 std::cout << K[i] << ", ";
             }
             std::cout << K[m-1] << ")\n";
         } else {
-			T = T_;
 			break;
 		}
 	}
@@ -390,10 +440,10 @@ void test_some_poly(STATE<m> K) {
     const u64 T0 = std::pow(p, m) - 1;
 	LFSR<p, m> g(K);
     g.set_K(K);
-    g.set_state(K);
-    const auto [is_divisor, T] = calculate_period(g);
+	u64 T;
+    const auto is_divisor = is_maximal_period(g, T);
     assert(is_divisor);
-    assert(T == T0);
+	assert(T == T0);
 }
 
 void find_lfsr_coefficients_T1_period();
