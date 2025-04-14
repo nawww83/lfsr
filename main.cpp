@@ -23,7 +23,7 @@ int main() {
 
 	// test_lfsr_hash_coverage_4();
 
-	test_bias();
+	test_bias16bit();
 	// test_next_back();
 	// test_state_increment();
 	// test_special();

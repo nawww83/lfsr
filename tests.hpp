@@ -466,7 +466,7 @@ void test_special();
 
 void test_total_period();
 
-void test_bias();
+void test_bias16bit();
 
 void test_random_generators();
 

@@ -410,7 +410,7 @@ void test_random_generator_next_back() {
     std::cout << " All Ok! Completed.\n";
 }
 
-void test_bias() {
+void test_bias16bit() {
     lfsr_rng_2::gens gen;
     gen.seed(get_random_u32x4(1));
     double g_mean = 0;
