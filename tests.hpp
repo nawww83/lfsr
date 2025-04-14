@@ -64,6 +64,29 @@ inline auto factor(u64 x) {
     return res;
 }
 
+
+inline auto get_random_u16x8(int64_t offset) {
+    const int64_t since_epoch_ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>
+        (std::chrono::system_clock::now().time_since_epoch()).count();
+    std::seed_seq g_rnd_sequence{since_epoch_ms & 255, (since_epoch_ms >> 8) & 255,
+                                 (since_epoch_ms >> 16) & 255, (since_epoch_ms >> 24) & 255, offset};
+    lfsr8::u16x8 st;
+    g_rnd_sequence.generate(st.begin(), st.end());
+    return st;
+}
+
+inline auto get_random_u32x4(int64_t offset) {
+    const int64_t since_epoch_ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>
+        (std::chrono::system_clock::now().time_since_epoch()).count();
+    std::seed_seq g_rnd_sequence{since_epoch_ms & 255, (since_epoch_ms >> 8) & 255,
+                                 (since_epoch_ms >> 16) & 255, (since_epoch_ms >> 24) & 255, offset};
+    lfsr8::u32x4 st;
+    g_rnd_sequence.generate(st.begin(), st.end());
+    return st;
+}
+
 template <char sep=' ', int width=3>
 inline void show_with_thousands_separator(std::integral auto x) {
     constexpr int max_digits = int(std::log2(2.) * std::popcount(-1ull) / std::log2(10.)) + 1;
@@ -87,6 +110,21 @@ inline void show_with_thousands_separator(std::integral auto x) {
         std::memcpy(str_th.data(), str.data(), res_len);
         std::cout << std::string_view(str_th.data(), str_th.data() + new_len) << '\n';
     }
+}
+
+template <typename T, typename Generator>
+inline T GetQuasiGaussSample(Generator& generator) { // Sum of 4 uniform samples.
+    uint64_t g_sample_u64 = generator.next_u64();
+    T g_sample_f = 0;
+    g_sample_f += T(g_sample_u64 & 0xffff) / T(65535);
+    g_sample_u64 >>= 16;
+    g_sample_f += T(g_sample_u64 & 0xffff) / T(65535);
+    g_sample_u64 >>= 16;
+    g_sample_f += T(g_sample_u64 & 0xffff) / T(65535);
+    g_sample_u64 >>= 16;
+    g_sample_f += T(g_sample_u64 & 0xffff) / T(65535);
+    g_sample_f = T(0.5) * (g_sample_f - 2);
+    return g_sample_f; // In range (-1, 1).
 }
 
 template <int p, int m>
@@ -427,6 +465,8 @@ void test_state_increment();
 void test_special();
 
 void test_total_period();
+
+void test_bias();
 
 void test_random_generators();
 

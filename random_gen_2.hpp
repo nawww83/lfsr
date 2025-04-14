@@ -30,7 +30,7 @@ using LFSR_3 = lfsr8::LFSR<p2, m>;
 using LFSR_4 = lfsr8::LFSR<p2, m>;
 using STATE = lfsr8::u32x4;
 
-STATE operator^(const STATE& x, const STATE& y) {
+inline STATE operator^(const STATE& x, const STATE& y) {
     STATE st;
     for (int i=0; i<m; ++i) {
         st[i] = x[i] ^ y[i];
@@ -38,7 +38,13 @@ STATE operator^(const STATE& x, const STATE& y) {
     return st;
 }
 
-STATE operator%(const STATE& x, u32 p) {
+inline void operator^=(STATE& x, const STATE& y) {
+    for (int i=0; i<m; ++i) {
+        x[i] ^= y[i];
+    }
+}
+
+inline STATE operator%(const STATE& x, u32 p) {
     STATE st;
     for (int i=0; i<m; ++i) {
         st[i] = x[i] % p;
@@ -46,12 +52,25 @@ STATE operator%(const STATE& x, u32 p) {
     return st;
 }
 
-void operator%=(STATE& x, u32 p) {
+inline void operator%=(STATE& x, u32 p) {
     for (int i=0; i<m; ++i) {
         x[i] %= p;
     }
 }
 
+inline STATE operator/(const STATE& x, u32 p) {
+    STATE st;
+    for (int i=0; i<m; ++i) {
+        st[i] = x[i] / p;
+    }
+    return st;
+}
+
+inline void operator/=(STATE& x, u32 p) {
+    for (int i=0; i<m; ++i) {
+        x[i] /= p;
+    }
+}
 
 // K1: (1, 2, 5, 0), K2: (2, 2, 4, 1); T free: 12166, 528; (i, j)-pattern: (0, 3).  // p1=23
 // K1: (1, 3, 10, 2), K2: (2, 2, 0, 4); T free: 2286, 3429; (i, j)-pattern: (2, 1). // p2=19
@@ -74,6 +93,7 @@ struct gens {
     u32 x2;
     u32 x3;
     u32 x4;
+    u32 adjust = 0;
 public:
     constexpr gens(): gp1(K1)
                     , gp2(K2)
@@ -99,6 +119,8 @@ public:
     u64 next_u64() {
         u64 x = 0;
         STATE mSt;
+        adjust++;
+        adjust %=7;
         for (int i=0; i<4; ++i) { // 16*4 bits
             gp1.next(x2);
             gp2.next(x1);
@@ -109,10 +131,14 @@ public:
             x3 = gp3.get_cell(i2);
             x4 = gp4.get_cell(j2);
             //
-            mSt = gp1.get_state() ^ gp2.get_state() ^ gp3.get_state() ^ gp4.get_state();
+            mSt = gp1.get_state() ^ gp2.get_state();
+            mSt ^= gp3.get_state() ^ gp4.get_state();
+            auto mStd = mSt / 16;
             mSt %= 16;
             x <<= 4;
             x |= mSt[0]; // 4 bits
+            if (((i == 0) || (i == 2)) && (adjust != 0))
+                x |= (mStd[1] & mStd[2] & mStd[3] & mStd[0]);
             x <<= 4;
             x |= mSt[1];
             x <<= 4;

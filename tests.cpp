@@ -410,9 +410,28 @@ void test_random_generator_next_back() {
     std::cout << " All Ok! Completed.\n";
 }
 
+void test_bias() {
+    lfsr_rng_2::gens gen;
+    gen.seed(get_random_u32x4(1));
+    double g_mean = 0;
+    int64_t g_c = 0;
+    for (;;) {
+        double mean = 0;
+        constexpr int N = 65536;
+        for (int i = 0; i < N; ++i) {
+            mean += GetQuasiGaussSample<float>(gen);
+        }
+        mean /= N;
+        g_c++;
+        g_mean += (mean - g_mean)/double(g_c);
+        if ((g_c % 1024) == 0)
+            std::cout << "bias: " << g_mean << '\n';
+    }
+}
+
 void test_random_generators() {
 	// Random generator infinite test
-	#define gen_version 3
+	#define gen_version 2
 	#if gen_version == 2
 		lfsr_rng_2::gens g;
 	#endif
