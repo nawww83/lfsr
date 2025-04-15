@@ -22,7 +22,9 @@ Approx. 210 MB/s @ Intel i7-8565U CPU 4.2GHz, GCC 11.4
 
 ## Random number generator performance
 V1: ~70 MB/s @ Period: ~77 bit/sample
+
 V2: ~115 MB/s @ Period: ~64 bit/sample
+
 V3: ~50MB/s @ Period: ~155 bit/sample
 
 @ Intel i7-8565U CPU 4.2GHz, GCC 12.3
