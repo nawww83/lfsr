@@ -113,7 +113,31 @@ inline void show_with_thousands_separator(std::integral auto x) {
 }
 
 template <typename T, typename Generator>
-inline T GetQuasiGaussSample(Generator& generator) { // Sum of 4 uniform samples.
+inline T GetQuasiGaussSample8(Generator& generator) { // Sum of 8 uniform samples.
+    uint64_t g_sample_u64 = generator.next_u64();
+    T g_sample_f = 0;
+    g_sample_f += T(g_sample_u64 & 0xff) / T(255);
+    g_sample_u64 >>= 8;
+    g_sample_f += T(g_sample_u64 & 0xff) / T(255);
+    g_sample_u64 >>= 8;
+	g_sample_f += T(g_sample_u64 & 0xff) / T(255);
+    g_sample_u64 >>= 8;
+	g_sample_f += T(g_sample_u64 & 0xff) / T(255);
+    g_sample_u64 >>= 8;
+	g_sample_f += T(g_sample_u64 & 0xff) / T(255);
+    g_sample_u64 >>= 8;
+    g_sample_f += T(g_sample_u64 & 0xff) / T(255);
+    g_sample_u64 >>= 8;
+	g_sample_f += T(g_sample_u64 & 0xff) / T(255);
+    g_sample_u64 >>= 8;
+	g_sample_f += T(g_sample_u64 & 0xff) / T(255);
+    g_sample_u64 >>= 8;
+    g_sample_f = T(0.25) * (g_sample_f - 4);
+    return g_sample_f; // In range (-1, 1).
+}
+
+template <typename T, typename Generator>
+inline T GetQuasiGaussSample4(Generator& generator) { // Sum of 4 uniform samples.
     uint64_t g_sample_u64 = generator.next_u64();
     T g_sample_f = 0;
     g_sample_f += T(g_sample_u64 & 0xffff) / T(65535);
@@ -465,6 +489,8 @@ void test_state_increment();
 void test_special();
 
 void test_total_period();
+
+void test_bias8bit();
 
 void test_bias16bit();
 

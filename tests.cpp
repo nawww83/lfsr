@@ -410,6 +410,25 @@ void test_random_generator_next_back() {
     std::cout << " All Ok! Completed.\n";
 }
 
+void test_bias8bit() {
+    lfsr_rng_2::gens gen;
+    gen.seed(get_random_u32x4(1));
+    double g_mean = 0;
+    int64_t g_c = 0;
+    for (;;) {
+        double mean = 0;
+        constexpr int N = 256;
+        for (int i = 0; i < N; ++i) {
+            mean += GetQuasiGaussSample8<float>(gen);
+        }
+        mean /= N;
+        g_c++;
+        g_mean += (mean - g_mean)/double(g_c);
+        if ((g_c % 1024) == 0)
+            std::cout << "bias 8 bit: " << g_mean << '\n';
+    }
+}
+
 void test_bias16bit() {
     lfsr_rng_2::gens gen;
     gen.seed(get_random_u32x4(1));
@@ -419,13 +438,13 @@ void test_bias16bit() {
         double mean = 0;
         constexpr int N = 65536;
         for (int i = 0; i < N; ++i) {
-            mean += GetQuasiGaussSample<float>(gen);
+            mean += GetQuasiGaussSample4<float>(gen);
         }
         mean /= N;
         g_c++;
         g_mean += (mean - g_mean)/double(g_c);
         if ((g_c % 1024) == 0)
-            std::cout << "bias: " << g_mean << '\n';
+            std::cout << "bias 16 bit: " << g_mean << '\n';
     }
 }
 
@@ -467,7 +486,7 @@ void test_random_generators() {
 	double ave_var_dt = 0;
 	double min_dt = std::numeric_limits<double>::infinity();
 	double max_dt = 0;
-	while (true) {
+	for (;;) {
 		std::cout << std::endl;
 		auto st = rnd_n::get_random_u32x4<4>(r);
 		timer.reset();
@@ -534,6 +553,11 @@ void test_random_generators() {
 			double chi2 =  chisq(frequencies, 8*N/256.);
 			ave_chi2 += (chi2 - ave_chi2) / (1.*c);
 			max_chi2 = std::max(chi2, max_chi2);
+            // std::cout << "Frequencies:\n";
+            // for (const auto& f : frequencies) {
+            //     std::cout << f << ", ";
+            // }
+            // std::cout << std::endl;
 			std::cout << "Byte-wise chi-square: " << chi2 << ", N: " << 8*N << " bytes. Ave chi2: " << ave_chi2 << ", max chi2: " << max_chi2 << std::endl;
 		}
 		//

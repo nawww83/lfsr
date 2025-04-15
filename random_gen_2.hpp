@@ -1,8 +1,7 @@
 #pragma once
 
-
 /*
-Simplified Random numbers generator with ~64 bit period.
+Simplified Random numbers generator with ~2^64 period.
 */
 
 #include "lfsr.hpp"
@@ -58,6 +57,20 @@ inline void operator%=(STATE& x, u32 p) {
     }
 }
 
+inline STATE operator/(const STATE& x, u32 p) {
+    STATE st;
+    for (int i=0; i<m; ++i) {
+        st[i] = x[i] / p;
+    }
+    return st;
+}
+
+inline void operator/=(STATE& x, u32 p) {
+    for (int i=0; i<m; ++i) {
+        x[i] /= p;
+    }
+}
+
 // K1: (1, 2, 5, 0), K2: (2, 2, 4, 1); T free: 12166, 528; (i, j)-pattern: (0, 3).  // p1=23
 // K1: (1, 3, 10, 2), K2: (2, 2, 0, 4); T free: 2286, 3429; (i, j)-pattern: (2, 1). // p2=19
 static constexpr STATE K1 = {1, 2, 5, 0};    // p1=23
@@ -93,17 +106,16 @@ public:
         for (int i=0; i<3*m; ++i) { // saturation
             gp1.next(x2);
             gp2.next(x1);
-            x1 = gp1.get_cell(i1);
-            x2 = gp2.get_cell(j1);
             gp3.next(x4);
             gp4.next(x3);
+            x1 = gp1.get_cell(i1);
+            x2 = gp2.get_cell(j1);
             x3 = gp3.get_cell(i2);
             x4 = gp4.get_cell(j2);
         }
     }
     u64 next_u64() {
         u64 x = 0;
-        STATE mSt;
         for (int i=0; i<4; ++i) { // 16*4 bits
             gp1.next(x2);
             gp2.next(x1);
@@ -113,20 +125,25 @@ public:
             x2 = gp2.get_cell(j1);
             x3 = gp3.get_cell(i2);
             x4 = gp4.get_cell(j2);
-            //
-            mSt = gp1.get_state() ^ gp2.get_state();
-            mSt ^= gp3.get_state() ^ gp4.get_state();
+            auto mSt = gp1.get_state();
+            mSt ^= gp2.get_state();
+            mSt ^= gp3.get_state();
+            mSt ^= gp4.get_state();
+            const auto high_bits = mSt / 16;
             mSt %= 16;
             x <<= 4;
-            x |= mSt[0]; // 4 bits
-            x <<= 4;
-            x |= mSt[1];
+            x |= mSt[0];
+            x ^= high_bits[1];
             x <<= 4;
             x |= mSt[2];
+            x ^= high_bits[0];
             x <<= 4;
             x |= mSt[3];
+            x ^= high_bits[2];
+            x <<= 4;
+            x |= mSt[1];
+            x ^= high_bits[3];
         }
-        //
         return x;
     }
 };
