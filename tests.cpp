@@ -2,6 +2,7 @@
 
 #include "lfsr_hash.hpp"
 
+#include "random_gen_1.hpp"
 #include "random_gen_2.hpp"
 #include "random_gen_3.hpp"
 
@@ -454,12 +455,15 @@ void test_random_generators() {
 	#if gen_version == 2
 		lfsr_rng_2::gens g;
 	#endif
+    #if gen_version == 1
+		lfsr_rng_1::Generators g;
+	#endif
 	#if gen_version == 3
 		lfsr_rng_3::Generators g;
 	#endif
 	rnd_n::GeometricDistribution<int> r(0.3);
 	r.seed();
-	#if gen_version == 3
+	#if gen_version == 3 || gen_version == 1
 		auto state_conversion = [](lfsr8::u32x4 st) {
 			lfsr8::u16x8 st1;
 			st1[0] = st[0];
@@ -477,7 +481,7 @@ void test_random_generators() {
 	#endif
 	//
 	long long c = 0;
-	#if gen_version == 3
+	#if gen_version == 3 || gen_version == 1
 		long long skeep = 0;
 	#endif
 	double ave_dt = 0;
@@ -490,7 +494,7 @@ void test_random_generators() {
 		std::cout << std::endl;
 		auto st = rnd_n::get_random_u32x4<4>(r);
 		timer.reset();
-		#if gen_version == 3
+		#if gen_version == 3 || gen_version == 1
 			const auto st_c = state_conversion(st);
 			g.seed(st_c);
 		#endif
@@ -499,7 +503,7 @@ void test_random_generators() {
 		#endif
 		double dt = timer.elapsed_ns();
 		//
-		#if gen_version == 3
+		#if gen_version == 3 || gen_version == 1
 			if (! g.is_succes()) {
 				skeep++; // it is better to achieve zero skeeps
 				std::cout << "Skipped!\n";
@@ -512,15 +516,7 @@ void test_random_generators() {
 		ave_var_dt += (dt*dt - ave_var_dt) / (1.*c);
 		min_dt = std::min(min_dt, dt);
 		max_dt = std::max(max_dt, dt);
-		#if gen_version == 1
-			const double T01 = std::pow(lfsr_rng::p1, 4) - 1;
-			const double T02 = std::pow(lfsr_rng::p2, 4) - 1;
-			const double T_bits = std::log2(g.T[4]) + std::log2(g.T[5]) + std::log2(g.T[6]) + std::log2(g.T[7]);
-			cout << "Counter: " << c << ", skeep: " << skeep << ", ave dt: " << ave_dt*1e-9 << " s, rms dt: " << std::sqrt(ave_var_dt - ave_dt*ave_dt)*1e-9 <<
-				", max dt: " << max_dt*1.e-09 << ", min dt: " << min_dt*1e-9 << "; " << g.ii01 << " : " << g.ii02 << " : " << 
-				g.T[4]/T01 << " : " << g.T[5]/T01 << " : " << g.T[6]/T02 << " : " << g.T[7]/T02 << ", T bits: " << T_bits << endl;
-		#endif
-		#if gen_version == 3
+		#if gen_version == 3 || gen_version == 1
 			const double T_bits = g.period();
 			std::cout << "Counter: " << c << ", skeep: " << skeep << ", ave dt: " << ave_dt*1e-9 << " s, rms dt: " << std::sqrt(ave_var_dt - ave_dt*ave_dt)*1e-9 <<
 				", max dt: " << max_dt*1.e-09 << ", min dt: " << min_dt*1e-9 << "; T bits: " << T_bits << std::endl;

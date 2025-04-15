@@ -21,8 +21,8 @@ g++ main.cpp lfsr_hash.cpp -std=c++20 -msse4.1 -O3 -o lfsr
 Approx. 210 MB/s @ Intel i7-8565U CPU 4.2GHz, GCC 11.4
 
 ## Random number generator performance
-V1: ~130 MB/s @ Period: ~77 bit/sample
-
+V1: ~70 MB/s @ Period: ~77 bit/sample
+V2: ~115 MB/s @ Period: ~64 bit/sample
 V3: ~50MB/s @ Period: ~155 bit/sample
 
 @ Intel i7-8565U CPU 4.2GHz, GCC 12.3
@@ -78,7 +78,7 @@ To improve the crypto resilience, the first LFSR pair is driven by the original 
 Bit scaling of LFSR hash is done by adding **salt**.
 
 ## Random number generation principles
-We have two LFSR pairs, one has $p=17$, the other has $p=19$. For example, lets consider the first pair. We can control the LFSR generator using a **sawtooth generator**:
+For PRNG V1 we have two LFSR pairs, one has $p=17$, the other has $p=19$. For example, lets consider the first pair. We can control the LFSR generator using a **sawtooth generator**:
 $$i = (i + 1) \mod q.$$
 
 Here $i$ - the output of the sawtooth generator with period $q < p$. We start generation from some initial value $i = i_0$. It is better to choose the sawtooth period $q$ so that the LFSR period $T = p^m - 1$ is not divided by that period. In this case we will visit all possible $i$ when the **fixed non-zero** LFSR state is repeated, while the total period of the system will be maximum and equal to $(p^m-1) \cdot q$.
@@ -96,3 +96,5 @@ The $64$-bit generator output is generated after $4$ work cycles, accumulating $
 The total period of the proposed LFSR generator controlled by the sawtooth generator is $77...79$ bits: the period is a random value with relatively small variance.
 
 The average byte-wise chi-square value is $256$ as expected.
+
+If we combine four LFSR pairs, we get ~155 bit period, see PRNG V3.
