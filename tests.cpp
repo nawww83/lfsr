@@ -1,10 +1,24 @@
+#include <iostream>
+#include <cmath>
+#include <cstring>
+#include <utility>
+#include <limits>
+#include <vector>
+#include <algorithm>
+#include <set>
+#include <map>
+#include <bit>
+#include <bitset>
+#include <concepts>
+#include <charconv>
+
 #include "tests.hpp"
-
 #include "lfsr_hash.hpp"
-
 #include "random_gen_1.hpp"
 #include "random_gen_2.hpp"
 #include "random_gen_3.hpp"
+#include "timer.hpp"
+#include "tests_templates.hpp"
 
 
 static timer_n::Timer timer;

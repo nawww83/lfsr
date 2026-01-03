@@ -15,7 +15,6 @@
 #include <charconv>
 
 #include "io_utils.hpp"
-
 #include "random_utils.hpp"
 #include "types.hpp"
 

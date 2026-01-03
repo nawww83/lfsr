@@ -16,11 +16,8 @@ int main() {
     assert( io.is_little_endian() ^ io.is_big_endian() );
 	
 	// test_lfsr_hash_coverage_1();
-
 	// test_lfsr_hash_coverage_2();
-
 	// test_lfsr_hash_coverage_3();
-
 	// test_lfsr_hash_coverage_4();
 
 	// test_bias8bit();
