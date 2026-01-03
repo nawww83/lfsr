@@ -69,10 +69,10 @@ inline auto get_random_paired_coeffs(Generator& g) {
 	return st;
 }
 
-template<int m, class Generator>
+template<class Generator>
 inline auto get_random_u32x4(Generator& g) {
 	lfsr8::u32x4 st {};
-	for (int i=0; i<m; ++i) {
+	for (int i = 0; i < 4; ++i) {
 		st[i] = g() & 255;
 		st[i] <<= 8;
 		st[i] |= g() & 255;

@@ -16,6 +16,8 @@ int main() {
     assert( io.is_little_endian() ^ io.is_big_endian() );
 
 	using namespace tests;
+
+	test_experiment();
 	
 	// test_lfsr_hash_coverage_1();
 	// test_lfsr_hash_coverage_2();
@@ -28,7 +30,7 @@ int main() {
 	// test_state_increment();
 	// test_special();
 	// test_total_period();
-	test_random_generators();
+	// test_random_generators();
 	// test_random_generator_next_back();
 	// find_lfsr_coefficients_T0_period();
 	

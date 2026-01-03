@@ -65,7 +65,6 @@ inline void operator^=(STATE& x, const STATE& y) {
     }
 }
 
-
 inline STATE operator%(const STATE& x, u32 p) {
     STATE st;
     for (int i=0; i<m; ++i) {

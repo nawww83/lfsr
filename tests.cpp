@@ -20,7 +20,6 @@
 #include "timer.hpp"
 #include "tests_templates.hpp"
 
-
 namespace tests
 {
 
@@ -410,7 +409,7 @@ void test_random_generator_next_back() {
         return st1;
     };
 
-    auto st = rnd_n::get_random_u32x4<4>(r);
+    auto st = rnd_n::get_random_u32x4(r);
     const auto st_c = state_conversion(st);
     g.seed(st_c);
 
@@ -509,7 +508,7 @@ void test_random_generators() {
 	double max_dt = 0;
 	for (;;) {
 		std::cout << std::endl;
-		auto st = rnd_n::get_random_u32x4<4>(r);
+		auto st = rnd_n::get_random_u32x4(r);
 		timer.reset();
 		#if gen_version == 3 || gen_version == 1
 			const auto st_c = state_conversion(st);
@@ -593,9 +592,92 @@ void test_random_generators() {
 }
 
 
-void test_experiment()
+void test_experiment() // Эксперимент по генерации общего секрета.
 {
-    ;
+    using STATE = lfsr_rng_3::STATE;
+    using namespace lfsr_rng_3;
+
+    LFSR_pair_2 gp1(K2);
+    LFSR_pair_2 gp2(K2); // На сторонах 1 и 2 генераторы с одинаковым полиномом.
+
+    rnd_n::GeometricDistribution<int> r(0.3);
+	r.seed();
+    auto state_conversion = [](lfsr8::u32x4 state) -> STATE
+    {
+        STATE result;
+    
+        result[0] = state[0];
+        result[1] = state[0] >> 16;
+        result[2] = state[1];
+        result[3] = state[1] >> 16;
+
+        result[4] = state[2];
+        result[5] = state[2] >> 16;
+        result[6] = state[3];
+        result[7] = state[3] >> 16;
+        
+        return result;
+    };
+
+    auto show_state = [](const std::string& title, STATE st)
+    {
+        std::cout << title << ":\n";
+        for (int i = 0; i < 8; ++i)
+        {
+            std::cout << st[i] << ", ";
+        }
+        std::cout << std::endl;
+    };
+
+    std::array<u16, 8> ii1_saw;
+    std::fill_n(ii1_saw.begin(), 8, 1); // Начальное состояние пилы на стороне 1 - произвольное.
+
+    std::array<u16, 8> ii2_saw;
+    std::fill_n(ii2_saw.begin(), 8, 2); // Начальное состояние пилы на стороне 2 - произвольное.
+
+    const int M1 = 126; // Количество шагов генератора до обмена и после обмена информацией между сторонами 1 и 2.
+    const int M2 = M1;  // Сделать так, чтобы M2 можно было выбирать произвольно - пока что не получается...
+
+    const auto st1 = state_conversion(rnd_n::get_random_u32x4(r)); // Секретный ключ стороны 1.
+    gp1.set_state(st1);
+    const auto st2 = state_conversion(rnd_n::get_random_u32x4(r)); // Секретный ключ стороны 2.
+    gp2.set_state(st2);
+    for (int i = 0; i < M1; ++i) 
+    {
+        gp1.next(ii1_saw[2], ii1_saw[3]);
+	    sawtooth(ii1_saw, primes_duplicates);
+    }
+    for (int i = 0; i < M2; ++i) 
+    {
+        gp2.next(ii2_saw[2], ii2_saw[3]);
+	    sawtooth(ii2_saw, primes_duplicates);
+    }
+    STATE mSt1 = gp1.get_state() ^ st1; // Закрываем состояние генератора и передаём его.
+    STATE mSt2 = gp2.get_state() ^ st2; // Закрываем состояние генератора и передаём его.
+    show_state("State1", mSt1);
+    show_state("State2", mSt2);
+    {
+        gp1.set_state((mSt2 ^ st1 ^ gp1.get_state()));
+        gp2.set_state((mSt1 ^ st2 ^ gp2.get_state()));
+        std::fill_n(ii1_saw.begin(), 8, 0); // Выключаем пилу.
+        std::fill_n(ii2_saw.begin(), 8, 0); // Выключаем пилу.
+    }
+    for (int i = 0; i < M1; ++i) 
+    {
+        gp1.next(ii1_saw[2], ii1_saw[3]);
+	    // sawtooth(ii1_saw, primes_duplicates); // Выключаем пилу.
+    }
+    for (int i = 0; i < M2; ++i) 
+    {
+        gp2.next(ii2_saw[2], ii2_saw[3]);
+	    // sawtooth(ii2_saw, primes_duplicates); // Выключаем пилу.
+    }
+    {
+        STATE shared_secret_1 = gp1.get_state(); // Общий секрет.
+        STATE shared_secret_2 = gp2.get_state(); // Должен быть равен общему секрету.
+        show_state("Shared secret 1", shared_secret_1);
+        show_state("Shared secret 2", shared_secret_2);
+    }
 }
 
 }
