@@ -1,5 +1,6 @@
-#include <chrono>
+#pragma once
 
+#include <chrono>
 
 namespace timer_n {
 

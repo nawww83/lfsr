@@ -413,7 +413,7 @@ void test_random_generator_next_back() {
 
 void test_bias8bit() {
     lfsr_rng_2::gens gen;
-    gen.seed(get_random_u32x4(1));
+    gen.seed(rnd_n::get_random_u32x4(1));
     double g_mean = 0;
     int64_t g_c = 0;
     for (;;) {
@@ -432,7 +432,7 @@ void test_bias8bit() {
 
 void test_bias16bit() {
     lfsr_rng_2::gens gen;
-    gen.seed(get_random_u32x4(1));
+    gen.seed(rnd_n::get_random_u32x4(1));
     double g_mean = 0;
     int64_t g_c = 0;
     for (;;) {
