@@ -21,6 +21,9 @@
 #include "tests_templates.hpp"
 
 
+namespace tests
+{
+
 static timer_n::Timer timer;
 
 void test_next_back() {
@@ -587,4 +590,12 @@ void test_random_generators() {
 		ave_perf += (perf - ave_perf) / (1.*c);
 		max_perf = std::max(perf, max_perf);
 	}
+}
+
+
+void test_experiment()
+{
+    ;
+}
+
 }

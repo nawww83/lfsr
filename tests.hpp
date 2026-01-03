@@ -1,5 +1,8 @@
 #pragma once
 
+namespace tests
+{
+
 void test_next_back();
 
 void test_state_increment();
@@ -31,3 +34,7 @@ void test_lfsr_hash_coverage_4();
 void test_square_of_lfsr();
 
 void test_mult_by_of_lfsr();
+
+void test_experiment();
+
+}

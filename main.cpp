@@ -14,6 +14,8 @@ int main() {
     cout << "Endianess: " << (io.is_little_endian() ? "LE\n" : "Not LE\n");
     cout << "Endianess: " << (io.is_big_endian() ? "BE\n" : "Not BE\n");
     assert( io.is_little_endian() ^ io.is_big_endian() );
+
+	using namespace tests;
 	
 	// test_lfsr_hash_coverage_1();
 	// test_lfsr_hash_coverage_2();
