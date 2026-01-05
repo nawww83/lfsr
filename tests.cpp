@@ -591,6 +591,55 @@ void test_random_generators() {
 	}
 }
 
+struct Phase {
+    int M;
+    lfsr_rng_3::STATE state;
+};
+
+void erase_for_phase (lfsr_rng_3::STATE& state, int phase, int m)
+{
+    for (int i = 0; auto& el : state)
+    {
+        if ((i % m) != phase) el = 0;
+        i++;
+    }
+};
+
+template <class LFSR_gen>
+Phase encode_phase(int phase, long T_max, int register_length, LFSR_gen& g)
+{
+    Phase result;
+    const auto r4 = rnd_n::get_random_u32x4(1);
+    const int M1 = register_length + r4[0] % (T_max - 2*register_length + 1); // Количество шагов генератора на стороне 1: случайное, не более периода генератора. Не известно стороне 2.
+    lfsr_rng_3::STATE state_init {1, 1, 1, 1, 1, 1, 1, 1};
+    erase_for_phase(state_init, phase, register_length);
+    g.set_state(state_init);
+    for (int i = 0; i < M1; ++i)
+        g.next();
+
+    result.M = M1;
+    result.state = g.get_state();
+    return result;
+}
+
+template <class LFSR_gen>
+std::pair<long, long> encode_pairs(const lfsr_rng_3::STATE& state, int phase, int register_length, LFSR_gen& g)
+{
+    g.set_state( state ); // Стороне 2 передаём конечное состояние генератора (полином которого стороне 2 не известен).
+    long idx1 = -1;
+    long idx2 = -1;
+    lfsr_rng_3::STATE state_init {1, 1, 1, 1, 1, 1, 1, 1};
+    erase_for_phase(state_init, phase, register_length);
+    for (long idx = 0; idx1 < 0 || idx2 < 0 ; ++idx) 
+    {
+        bool is_unit1 = g.is_state_low(state_init);
+        bool is_unit2 = g.is_state_high(state_init);
+        if (is_unit1) idx1 = idx;
+        if (is_unit2) idx2 = idx;
+        g.next();
+    }
+    return std::make_pair(idx1, idx2);
+}
 
 void test_experiment() // Эксперимент по генерации общего секрета.
 {
@@ -612,64 +661,115 @@ void test_experiment() // Эксперимент по генерации общ�
         std::cout << std::endl;
     };
 
-    const int M1 = 5455; // Количество шагов генератора на стороне 1: случайное, не более периода генератора. Не известно стороне 2.
+    const int register_length = lfsr_rng_3::m / 2;
+    const u32 T_max = std::pow((long)lfsr_rng_3::p[1], register_length) - 1; // Максимальный период генератора.
 
-    // Этап 1: по единичному состоянию определяем параметры (idx1, idx2) для передачи первых символов состояний (в рассматриваемом случае состояний - два).  
-    const STATE state_init {1, 0, 0, 0, 1, 0, 0, 0}; // Здесь фактически два состояния. Первые символы имеют глобальные индексы 0 и 4.
-    gp1.set_state(state_init);
-    for (int i = 0; i < M1; ++i) 
-    {
-        gp1.next();
-    }
+    std::vector<STATE> encoded_data_side_1;
+    std::vector<std::pair<long, long>> encoded_indices;
 
-    gp2.set_state( gp1.get_state() ); // Стороне 2 передаём конечное состояние генератора (полином которого стороне 2 не известен).
-    int idx1 = -1;
-    int idx2 = -1;
-    for (int idx = 0; idx1 < 0 || idx2 < 0 ; ++idx) 
-    {
-        bool is_unit1 = gp2.is_state_low(state_init);
-        bool is_unit2 = gp2.is_state_high(state_init);
-        if (is_unit1) idx1 = idx;
-        if (is_unit2) idx2 = idx;
-        gp2.next();
-    }
-    std::cout << "Indices on the Side 2 are: (" << idx1 << ", " << idx2 << ")" << '\n';
+    const STATE shared_secret = rnd_n::get_random_state<lfsr_rng_3::p[1], 8>(r);
+    show_state("Shared secret", shared_secret);
 
+    // Фаза 0 (фазы могут кодироваться в любом порядке).
+    // Этап 1: по единичному состоянию определяем параметры (idx1, idx2) для передачи первых символов состояний генераторов (в рассматриваемом случае состояний - два). 
+    const Phase phase0 = encode_phase(0, T_max, register_length, gp1);
+    encoded_indices.push_back(encode_pairs(phase0.state, 0, register_length, gp2));
+    // std::cout << "Indices on the Side 2 are: (" << idx1 << ", " << idx2 << ")" << '\n';
     // Этап 2: кодирование конкретного состояния (только для первых символов).
-    // const STATE st1 = rnd_n::get_random_state<lfsr_rng_3::p[1], 8>(r);
-    const STATE st1 {11, 0, 0, 0, 2, 0, 0, 0};
-    show_state("State on the Side 1", st1);
-    gp1.set_state(st1);
-    for (int i = 0; i < M1; ++i) 
     {
-        gp1.next();
+        STATE st1 = shared_secret;
+        erase_for_phase(st1, 0, register_length);
+        // show_state("State on the Side 1", st1);
+        gp1.set_state(st1);
+        for (int i = 0; i < phase0.M; ++i) 
+            gp1.next();
     }
+    // Запоминание кодированного состояния.
+    encoded_data_side_1.push_back(gp1.get_state());
+
+    // Фаза 1 (фазы могут кодироваться в любом порядке).
+    // Этап 1: по единичному состоянию определяем параметры (idx1, idx2) для передачи первых символов состояний генераторов (в рассматриваемом случае состояний - два). 
+    const Phase phase1 = encode_phase(1, T_max, register_length, gp1);
+    encoded_indices.push_back(encode_pairs(phase1.state, 1, register_length, gp2));
+    // std::cout << "Indices on the Side 2 are: (" << idx1 << ", " << idx2 << ")" << '\n';
+    // Этап 2: кодирование конкретного состояния (только для вторых символов).
+    {
+        STATE st1 = shared_secret;
+        erase_for_phase(st1, 1, register_length);
+        // show_state("State on the Side 1", st1);
+        gp1.set_state(st1);
+        for (int i = 0; i < phase1.M; ++i) 
+            gp1.next();
+    }
+    // Запоминание кодированного состояния.
+    encoded_data_side_1.push_back(gp1.get_state());
+    
+    // Фаза 2 (фазы могут кодироваться в любом порядке).
+    // Этап 1: по единичному состоянию определяем параметры (idx1, idx2) для передачи первых символов состояний генераторов (в рассматриваемом случае состояний - два). 
+    const Phase phase2 = encode_phase(2, T_max, register_length, gp1);
+    encoded_indices.push_back(encode_pairs(phase2.state, 2, register_length, gp2));
+    // std::cout << "Indices on the Side 2 are: (" << idx1 << ", " << idx2 << ")" << '\n';
+    // Этап 2: кодирование конкретного состояния (только для третьих символов).
+    {
+        STATE st1 = shared_secret;
+        erase_for_phase(st1, 2, register_length);
+        // show_state("State on the Side 1", st1);
+        gp1.set_state(st1);
+        for (int i = 0; i < phase2.M; ++i) 
+            gp1.next();
+    }
+    // Запоминание кодированного состояния.
+    encoded_data_side_1.push_back(gp1.get_state());
+
+
+    // Фаза 3 (фазы могут кодироваться в любом порядке).
+    // Этап 1: по единичному состоянию определяем параметры (idx1, idx2) для передачи первых символов состояний генераторов (в рассматриваемом случае состояний - два). 
+    const Phase phase3 = encode_phase(3, T_max, register_length, gp1);
+    encoded_indices.push_back(encode_pairs(phase3.state, 3, register_length, gp2));
+    // std::cout << "Indices on the Side 2 are: (" << idx1 << ", " << idx2 << ")" << '\n';
+    // Этап 2: кодирование конкретного состояния (только для четвёртых символов).
+    {
+        STATE st1 = shared_secret;
+        erase_for_phase(st1, 3, register_length);
+        // show_state("State on the Side 1", st1);
+        gp1.set_state(st1);
+        for (int i = 0; i < phase3.M; ++i) 
+            gp1.next();
+    }
+    // Запоминание кодированного состояния.
+    encoded_data_side_1.push_back(gp1.get_state());
 
     STATE st_restored;
-    gp2.set_state( gp1.get_state() );
-    int passed = 0;
-    for (int idx = 0; ; ++idx) 
+    std::fill_n(st_restored.begin(), register_length*2, 0);
+    assert(encoded_data_side_1.size() == encoded_indices.size());
+    for (size_t i = 0; i < encoded_data_side_1.size(); ++i)
     {
-        if (idx == idx1) {
-            STATE st = gp2.get_state();
-            passed++;
-            std::cout << "Index low is: " << idx << '\n';
-            st_restored[0] = st[0];
-            st_restored[1] = st[1];
-            st_restored[2] = st[2];
-            st_restored[3] = st[3];
+        gp2.set_state( encoded_data_side_1.at(i) );
+        int passed = 0;
+        const auto [idx1, idx2] = encoded_indices.at(i);
+        for (long idx = 0; ; ++idx) 
+        {
+            if (idx == idx1) {
+                const STATE st = gp2.get_state();
+                passed++;
+                // std::cout << "Index low is: " << idx << '\n';
+                st_restored[0] |= st[0];
+                st_restored[1] |= st[1];
+                st_restored[2] |= st[2];
+                st_restored[3] |= st[3];
+            }
+            if (idx == idx2) {
+                const STATE st = gp2.get_state();
+                passed++;
+                // std::cout << "Index high is: " << idx << '\n';
+                st_restored[4] |= st[4];
+                st_restored[5] |= st[5];
+                st_restored[6] |= st[6];
+                st_restored[7] |= st[7];
+            }
+            if (passed > 1) break;
+            gp2.next();
         }
-        if (idx == idx2) {
-            STATE st = gp2.get_state();
-            passed++;
-            std::cout << "Index high is: " << idx << '\n';
-            st_restored[4] = st[4];
-            st_restored[5] = st[5];
-            st_restored[6] = st[6];
-            st_restored[7] = st[7];
-        }
-        if (passed > 1) break;
-        gp2.next();
     }
     show_state("Restored state", st_restored);
 }
