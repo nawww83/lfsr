@@ -595,31 +595,14 @@ void test_random_generators() {
 void test_experiment() // Эксперимент по генерации общего секрета.
 {
     using STATE = lfsr_rng_3::STATE;
-    using namespace lfsr_rng_3;
 
-    LFSR_pair_2 gp1(K2);
-    LFSR_pair_2 gp2(K2); // На сторонах 1 и 2 генераторы с одинаковым полиномом.
+    lfsr_rng_3::LFSR_pair_2 gp1(lfsr_rng_3::K2); // На стороне 1 и 2 - разные (случайные) полиномы, но оба с максимальным периодом (и одним модулем).
+    lfsr_rng_3::LFSR_pair_3 gp2(lfsr_rng_3::K3);
 
     rnd_n::GeometricDistribution<int> r(0.3);
 	r.seed();
-    auto state_conversion = [](lfsr8::u32x4 state) -> STATE
-    {
-        STATE result;
-    
-        result[0] = state[0];
-        result[1] = state[0] >> 16;
-        result[2] = state[1];
-        result[3] = state[1] >> 16;
 
-        result[4] = state[2];
-        result[5] = state[2] >> 16;
-        result[6] = state[3];
-        result[7] = state[3] >> 16;
-        
-        return result;
-    };
-
-    auto show_state = [](const std::string& title, STATE st)
+    [[maybe_unused]] auto show_state = [](const std::string& title, STATE st)
     {
         std::cout << title << ":\n";
         for (int i = 0; i < 8; ++i)
@@ -629,55 +612,66 @@ void test_experiment() // Эксперимент по генерации общ�
         std::cout << std::endl;
     };
 
-    std::array<u16, 8> ii1_saw;
-    std::fill_n(ii1_saw.begin(), 8, 1); // Начальное состояние пилы на стороне 1 - произвольное.
+    const int M1 = 5455; // Количество шагов генератора на стороне 1: случайное, не более периода генератора. Не известно стороне 2.
 
-    std::array<u16, 8> ii2_saw;
-    std::fill_n(ii2_saw.begin(), 8, 2); // Начальное состояние пилы на стороне 2 - произвольное.
+    // Этап 1: по единичному состоянию определяем параметры (idx1, idx2) для передачи первых символов состояний (в рассматриваемом случае состояний - два).  
+    const STATE state_init {1, 0, 0, 0, 1, 0, 0, 0}; // Здесь фактически два состояния. Первые символы имеют глобальные индексы 0 и 4.
+    gp1.set_state(state_init);
+    for (int i = 0; i < M1; ++i) 
+    {
+        gp1.next();
+    }
 
-    const int M1 = 126; // Количество шагов генератора до обмена и после обмена информацией между сторонами 1 и 2.
-    const int M2 = M1;  // Сделать так, чтобы M2 можно было выбирать произвольно - пока что не получается...
+    gp2.set_state( gp1.get_state() ); // Стороне 2 передаём конечное состояние генератора (полином которого стороне 2 не известен).
+    int idx1 = -1;
+    int idx2 = -1;
+    for (int idx = 0; idx1 < 0 || idx2 < 0 ; ++idx) 
+    {
+        bool is_unit1 = gp2.is_state_low(state_init);
+        bool is_unit2 = gp2.is_state_high(state_init);
+        if (is_unit1) idx1 = idx;
+        if (is_unit2) idx2 = idx;
+        gp2.next();
+    }
+    std::cout << "Indices on the Side 2 are: (" << idx1 << ", " << idx2 << ")" << '\n';
 
-    const auto st1 = state_conversion(rnd_n::get_random_u32x4(r)); // Секретный ключ стороны 1.
+    // Этап 2: кодирование конкретного состояния (только для первых символов).
+    // const STATE st1 = rnd_n::get_random_state<lfsr_rng_3::p[1], 8>(r);
+    const STATE st1 {11, 0, 0, 0, 2, 0, 0, 0};
+    show_state("State on the Side 1", st1);
     gp1.set_state(st1);
-    const auto st2 = state_conversion(rnd_n::get_random_u32x4(r)); // Секретный ключ стороны 2.
-    gp2.set_state(st2);
     for (int i = 0; i < M1; ++i) 
     {
-        gp1.next(ii1_saw[2], ii1_saw[3]);
-	    sawtooth(ii1_saw, primes_duplicates);
+        gp1.next();
     }
-    for (int i = 0; i < M2; ++i) 
+
+    STATE st_restored;
+    gp2.set_state( gp1.get_state() );
+    int passed = 0;
+    for (int idx = 0; ; ++idx) 
     {
-        gp2.next(ii2_saw[2], ii2_saw[3]);
-	    sawtooth(ii2_saw, primes_duplicates);
+        if (idx == idx1) {
+            STATE st = gp2.get_state();
+            passed++;
+            std::cout << "Index low is: " << idx << '\n';
+            st_restored[0] = st[0];
+            st_restored[1] = st[1];
+            st_restored[2] = st[2];
+            st_restored[3] = st[3];
+        }
+        if (idx == idx2) {
+            STATE st = gp2.get_state();
+            passed++;
+            std::cout << "Index high is: " << idx << '\n';
+            st_restored[4] = st[4];
+            st_restored[5] = st[5];
+            st_restored[6] = st[6];
+            st_restored[7] = st[7];
+        }
+        if (passed > 1) break;
+        gp2.next();
     }
-    STATE mSt1 = gp1.get_state() ^ st1; // Закрываем состояние генератора и передаём его.
-    STATE mSt2 = gp2.get_state() ^ st2; // Закрываем состояние генератора и передаём его.
-    show_state("State1", mSt1);
-    show_state("State2", mSt2);
-    {
-        gp1.set_state((mSt2 ^ st1 ^ gp1.get_state()));
-        gp2.set_state((mSt1 ^ st2 ^ gp2.get_state()));
-        std::fill_n(ii1_saw.begin(), 8, 0); // Выключаем пилу.
-        std::fill_n(ii2_saw.begin(), 8, 0); // Выключаем пилу.
-    }
-    for (int i = 0; i < M1; ++i) 
-    {
-        gp1.next(ii1_saw[2], ii1_saw[3]);
-	    // sawtooth(ii1_saw, primes_duplicates); // Выключаем пилу.
-    }
-    for (int i = 0; i < M2; ++i) 
-    {
-        gp2.next(ii2_saw[2], ii2_saw[3]);
-	    // sawtooth(ii2_saw, primes_duplicates); // Выключаем пилу.
-    }
-    {
-        STATE shared_secret_1 = gp1.get_state(); // Общий секрет.
-        STATE shared_secret_2 = gp2.get_state(); // Должен быть равен общему секрету.
-        show_state("Shared secret 1", shared_secret_1);
-        show_state("Shared secret 2", shared_secret_2);
-    }
+    show_state("Restored state", st_restored);
 }
 
 }

@@ -30,7 +30,9 @@ int main() {
 	// test_state_increment();
 	// test_special();
 	// test_total_period();
+	
 	// test_random_generators();
+
 	// test_random_generator_next_back();
 	// find_lfsr_coefficients_T0_period();
 	
