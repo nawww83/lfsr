@@ -2,6 +2,7 @@
 
 #include <random>
 #include <chrono>
+#include <array>
 
 #include "types.hpp"
 
@@ -104,6 +105,17 @@ inline auto get_random_u32x4(int64_t offset) {
     lfsr8::u32x4 st;
     g_rnd_sequence.generate(st.begin(), st.end());
     return st;
+}
+
+inline auto get_random_long_positive(int64_t offset) {
+    const int64_t since_epoch_ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>
+        (std::chrono::system_clock::now().time_since_epoch()).count();
+    std::seed_seq g_rnd_sequence{since_epoch_ms & 255, (since_epoch_ms >> 8) & 255,
+                                 (since_epoch_ms >> 16) & 255, (since_epoch_ms >> 24) & 255, offset};
+    std::array<long, 1> value;
+    g_rnd_sequence.generate(value.begin(), value.end());
+    return std::abs(value.at(0));
 }
 
 }
