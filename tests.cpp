@@ -19,6 +19,7 @@
 #include "random_gen_3.hpp"
 #include "timer.hpp"
 #include "tests_templates.hpp"
+#include "shared_secret.hpp"
 
 namespace tests
 {
@@ -591,15 +592,13 @@ void test_random_generators() {
 	}
 }
 
-void test_experiment() // Эксперимент по генерации общего секрета.
+void test_shared_secret_generation() // Эксперимент по генерации общего секрета.
 {
     constexpr int prime_modulo = 17;
     constexpr int register_length = 4;
-    LFSR<prime_modulo, register_length> gp1({3, 4, 2, 1});
-    LFSR<prime_modulo, register_length> gp2({3, 4, 2, 1});
+    using namespace shared_secret_n;
 
-    rnd_n::GeometricDistribution<int> r(0.3);
-	r.seed();
+    SharedSecret<prime_modulo, register_length> sh_secret_generator(STATE<register_length>{3, 4, 2, 1});
 
     [[maybe_unused]] auto show_state = [](const std::string& title, STATE<register_length> st)
     {
@@ -611,71 +610,12 @@ void test_experiment() // Эксперимент по генерации общ�
         std::cout << std::endl;
     };
 
-    const u32 T_max = std::pow(prime_modulo, register_length) - 1; // Максимальный период генератора.
-
-    const auto st1 = rnd_n::get_random_state<prime_modulo, register_length>(r);
-    const auto st2 = rnd_n::get_random_state<prime_modulo, register_length>(r);
-
-    constexpr long pm = prime_modulo * register_length;
-
     // Stage 1
-    {
-        const long M = pm + rnd_n::get_random_long_positive(0) % (T_max - 2*pm + 1);
-        const long N = pm + rnd_n::get_random_long_positive(0) % (T_max - 2*pm + 1);
-        gp1.set_state(st1);
-        for (long i = 0; i < M; ++i)
-        {
-            gp1.next();
-        }
-        gp2.set_state(gp1.get_state());
-        gp2.mult_by(st2);
-        for (long i = 0; i < N; ++i)
-        {
-            gp2.next();
-        }
-        gp1.set_state(gp2.get_state());
-        gp1.mult_by(st1);
-        for (long i = 0; i < M; ++i)
-        {
-            gp1.back();
-        }
-        gp2.set_state(gp1.get_state());
-        gp2.mult_by(st2);
-        for (long i = 0; i < N; ++i)
-        {
-            gp2.back();
-        }
-        show_state("Stage 1 state", gp2.get_state());
-    }
+    auto shared_secret_12 = sh_secret_generator.GenerateSecretBySide2();
+    show_state("Stage 1 state", shared_secret_12);
     // Stage 2
-    {
-        const long M = pm + rnd_n::get_random_long_positive(0) % (T_max - 2*pm + 1);
-        const long N = pm + rnd_n::get_random_long_positive(0) % (T_max - 2*pm + 1);
-        gp2.set_state(st2);
-        for (long i = 0; i < N; ++i)
-        {
-            gp2.next();
-        }
-        gp1.set_state(gp2.get_state());
-        gp1.mult_by(st1);
-        for (long i = 0; i < M; ++i)
-        {
-            gp1.next();
-        }
-        gp2.set_state(gp1.get_state());
-        gp2.mult_by(st2);
-        for (long i = 0; i < N; ++i)
-        {
-            gp2.back();
-        }
-        gp1.set_state(gp2.get_state());
-        gp1.mult_by(st1);
-        for (long i = 0; i < M; ++i)
-        {
-            gp1.back();
-        }
-        show_state("Stage 2 state", gp1.get_state());
-    }
+    auto shared_secret_21 = sh_secret_generator.GenerateSecretBySide1();
+    show_state("Stage 2 state", shared_secret_21);
 }
 
 }

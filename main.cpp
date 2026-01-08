@@ -17,7 +17,7 @@ int main() {
 
 	using namespace tests;
 
-	test_experiment();
+	test_shared_secret_generation();
 	
 	// test_lfsr_hash_coverage_1();
 	// test_lfsr_hash_coverage_2();

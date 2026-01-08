@@ -294,11 +294,11 @@ public:
 #endif
     }
 
-    auto get_state() const {
+    STATE get_state() const {
         return m_state;
     }
 
-    auto get_cell(int idx) const {
+    SAMPLE get_cell(int idx) const {
         return m_state[idx];
     }
 private:
