@@ -209,6 +209,26 @@ void test_mult_by_of_lfsr() {
     }
 }
 
+void test_power_of_lfsr()
+{
+    std::cout << "Power by LFSR test\n";	
+    {
+        STATE<4> K = {2, 3, 1, 1};
+        LFSR<13, 4> g(K);
+        long T = std::pow(13, 4) - 1;
+        g.set_state({1, 2, 3, 4});
+        g.power_by(T);
+        assert(g.is_state({1, 0, 0, 0}));
+    }
+    {
+        STATE<4> K = {2, 3, 1, 1};
+        LFSR<13, 4> g(K);
+        g.set_state({1, 2, 3, 4});
+        g.power_by(0);
+        assert(g.is_state({1, 0, 0, 0}));        
+    }
+}
+
 void find_lfsr_coefficients_T0_period() {
     constexpr int p = 2;
     constexpr int m = 5;

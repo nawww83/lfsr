@@ -268,6 +268,25 @@ public:
     }
 
     /**
+     * @brief Возвести текущее состояние генератора в степень.
+     * @param q Показатель степени.
+     */
+    void power_by(unsigned long q)
+    {
+        unsigned long x = q;
+        LFSR<p, m> lfsr{m_K};
+        lfsr.set_unit_state();
+        for (; x != 0;)
+        {
+            if ((x & 1) == 1)
+                lfsr.mult_by(get_state());
+            square();
+            x /= 2;
+        }
+        set_state(lfsr.get_state());
+    }
+
+    /**
      * @brief Насытить генератор.
      * @param q Количество тактов.
      */

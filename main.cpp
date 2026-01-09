@@ -60,6 +60,8 @@ int main() {
 
 	// test_square_of_lfsr();
 	// test_mult_by_of_lfsr();
+
+	test_power_of_lfsr();
     
 	return 0;
 }

@@ -60,29 +60,39 @@ public:
         const long M = pm + rnd_n::get_random_long_positive(0) % (T_max - 2*pm + 1);
         const long N = pm + rnd_n::get_random_long_positive(0) % (T_max - 2*pm + 1);
         
-        mGp2.set_state(mSt2);
-        for (long i = 0; i < N; ++i)
-        {
-            mGp2.next();
-        }
+        STATE<register_length> tmp_state = mSt2; // Временная переменная для хранения состояния.
+        mGp2.set_unit_state(); // x^0.
+        mGp2.next(); // x^1.
+        mGp2.power_by(N); // Пара next() и power_by(q) соответствуют next() в цикле q раз. Так вычисляется x^q.
+        mGp2.mult_by(tmp_state); // x^q * v2(x)
+
         mGp1.set_state(mGp2.get_state());
-        mGp1.mult_by(mSt1);
-        for (long i = 0; i < M; ++i)
-        {
-            mGp1.next();
-        }
+        
+        mGp1.mult_by(mSt1); // *= v1(x)
+        tmp_state = mGp1.get_state();
+        mGp1.set_unit_state();
+        mGp1.next();
+        mGp1.power_by(M);
+        mGp1.mult_by(tmp_state);
+
         mGp2.set_state(mGp1.get_state());
+    
         mGp2.mult_by(mSt2);
-        for (long i = 0; i < N; ++i)
-        {
-            mGp2.back();
-        }
+        tmp_state = mGp2.get_state();
+        mGp2.set_unit_state();
+        mGp2.next();
+        mGp2.power_by(T_max - N);
+        mGp2.mult_by(tmp_state);
+        
         mGp1.set_state(mGp2.get_state());
+
         mGp1.mult_by(mSt1);
-        for (long i = 0; i < M; ++i)
-        {
-            mGp1.back();
-        }
+        tmp_state = mGp1.get_state();
+        mGp1.set_unit_state();
+        mGp1.next();
+        mGp1.power_by(T_max - M);
+        mGp1.mult_by(tmp_state);
+    
         return mGp1.get_state();
     }
 
@@ -96,29 +106,39 @@ public:
         const long P = pm + rnd_n::get_random_long_positive(0) % (T_max - 2*pm + 1);
         const long Q = pm + rnd_n::get_random_long_positive(0) % (T_max - 2*pm + 1);
 
-        mGp1.set_state(mSt1);
-        for (long i = 0; i < P; ++i)
-        {
-            mGp1.next();
-        }
+        STATE<register_length> tmp_state = mSt1;
+        mGp1.set_unit_state();
+        mGp1.next();
+        mGp1.power_by(P);
+        mGp1.mult_by(tmp_state);
+
         mGp2.set_state(mGp1.get_state());
+        
         mGp2.mult_by(mSt2);
-        for (long i = 0; i < Q; ++i)
-        {
-            mGp2.next();
-        }
+        tmp_state = mGp2.get_state();
+        mGp2.set_unit_state();
+        mGp2.next();
+        mGp2.power_by(Q);
+        mGp2.mult_by(tmp_state);
+
         mGp1.set_state(mGp2.get_state());
+    
         mGp1.mult_by(mSt1);
-        for (long i = 0; i < P; ++i)
-        {
-            mGp1.back();
-        }
+        tmp_state = mGp1.get_state();
+        mGp1.set_unit_state();
+        mGp1.next();
+        mGp1.power_by(T_max - P);
+        mGp1.mult_by(tmp_state);
+        
         mGp2.set_state(mGp1.get_state());
+
         mGp2.mult_by(mSt2);
-        for (long i = 0; i < Q; ++i)
-        {
-            mGp2.back();
-        }
+        tmp_state = mGp2.get_state();
+        mGp2.set_unit_state();
+        mGp2.next();
+        mGp2.power_by(T_max - Q);
+        mGp2.mult_by(tmp_state);
+    
         return mGp2.get_state();
     }
 };
