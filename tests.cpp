@@ -413,7 +413,6 @@ void test_random_generator_next_back() {
 
     lfsr_rng_3::Generators g;
     rnd_n::GeometricDistribution<int> r(0.3);
-	r.seed();
 
     auto state_conversion = [](lfsr8::u32x4 st) {
         lfsr8::u16x8 st1;
@@ -450,7 +449,7 @@ void test_random_generator_next_back() {
 
 void test_bias8bit() {
     lfsr_rng_2::gens gen;
-    gen.seed(rnd_n::get_random_u32x4(1));
+    gen.seed(rnd_n::get_random_u32x4<1>());
     double g_mean = 0;
     int64_t g_c = 0;
     for (;;) {
@@ -469,7 +468,7 @@ void test_bias8bit() {
 
 void test_bias16bit() {
     lfsr_rng_2::gens gen;
-    gen.seed(rnd_n::get_random_u32x4(1));
+    gen.seed(rnd_n::get_random_u32x4<1>());
     double g_mean = 0;
     int64_t g_c = 0;
     for (;;) {
@@ -499,7 +498,6 @@ void test_random_generators() {
 		lfsr_rng_3::Generators g;
 	#endif
 	rnd_n::GeometricDistribution<int> r(0.3);
-	r.seed();
 	#if gen_version == 3 || gen_version == 1
 		auto state_conversion = [](lfsr8::u32x4 st) {
 			lfsr8::u16x8 st1;
@@ -618,7 +616,9 @@ void test_shared_secret_generation() // Эксперимент по генера
     constexpr int register_length = 4;
     using namespace shared_secret_n;
 
-    SharedSecret<prime_modulo, register_length> sh_secret_generator(STATE<register_length>{3, 4, 2, 1});
+    const auto g = STATE<register_length>{3, 4, 2, 1};
+    SharedSecret<prime_modulo, register_length> sh_secret_generator1(g);
+    SharedSecret<prime_modulo, register_length> sh_secret_generator2(g);
 
     [[maybe_unused]] auto show_state = [](const std::string& title, STATE<register_length> st)
     {
@@ -631,11 +631,32 @@ void test_shared_secret_generation() // Эксперимент по генера
     };
 
     // Stage 1
-    auto shared_secret_12 = sh_secret_generator.GenerateSecretBySide2();
-    show_state("Stage 1 state", shared_secret_12);
+    sh_secret_generator1.Init();
+    sh_secret_generator2.Init();
+    sh_secret_generator1.Forward();
+    sh_secret_generator2.SetState(sh_secret_generator1.GetState());
+    sh_secret_generator2.Forward();
+    sh_secret_generator1.SetState(sh_secret_generator2.GetState());
+    sh_secret_generator1.Backward();
+    sh_secret_generator2.SetState(sh_secret_generator1.GetState());
+    sh_secret_generator2.Backward();
+    const auto sh_secret_stage_1 = sh_secret_generator2.GetState();
+    show_state("Stage 1 state", sh_secret_stage_1);
+    
     // Stage 2
-    auto shared_secret_21 = sh_secret_generator.GenerateSecretBySide1();
-    show_state("Stage 2 state", shared_secret_21);
+    sh_secret_generator1.Init();
+    sh_secret_generator2.Init();
+    sh_secret_generator2.Forward();
+    sh_secret_generator1.SetState(sh_secret_generator2.GetState());
+    sh_secret_generator1.Forward();
+    sh_secret_generator2.SetState(sh_secret_generator1.GetState());
+    sh_secret_generator2.Backward();
+    sh_secret_generator1.SetState(sh_secret_generator2.GetState());
+    sh_secret_generator1.Backward();
+    const auto sh_secret_stage_2 = sh_secret_generator1.GetState(); 
+    show_state("Stage 2 state", sh_secret_stage_2);
+
+    assert(sh_secret_stage_1 == sh_secret_stage_2);
 }
 
 }

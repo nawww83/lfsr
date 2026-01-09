@@ -7,8 +7,6 @@
 namespace shared_secret_n
 {
 
-static rnd_n::GeometricDistribution<int> g_rnd(0.3);
-
 /**
  * @brief Генератор общего секрета.
  */
@@ -16,130 +14,90 @@ template <int prime_modulo, int register_length>
 class SharedSecret
 {
     using _LFSR = LFSR<prime_modulo, register_length>;
+    static constexpr long PM = prime_modulo * register_length;
 private:
     /**
-     * @brief Генератор g(x) стороны 1.
+     * @brief Максимальный период генератора.
      */
-    _LFSR mGp1;
+    static const u32 T_MAX = std::pow(prime_modulo, register_length) - 1;
 
     /**
-     * @brief Генератор g(x) стороны 2.
+     * @brief Случайная степень x. Задаёт x^M mod g(x) - некоторое случайное состояние.
      */
-    _LFSR mGp2;
+    long M;
 
     /**
-     * @brief Состояние v(x) стороны 1, которое формирует общий секрет.
+     * @brief LFSR генератор g(x). Должен иметь максимальный период.
      */
-    STATE<register_length> mSt1;
+    _LFSR mGenerator;
 
     /**
-     * @brief Состояние v(x) стороны 2, которое формирует общий секрет.
+     * @brief Случайное состояние v(x) стороны, которое формирует общий секрет.
      */
-    STATE<register_length> mSt2;
+    const STATE<register_length> mRandomState;
 public:
     /**
      * @brief Конструктор с параметром.
      * @param g Коэффициенты генераторного полинома g(x).
      */
     constexpr explicit SharedSecret<prime_modulo, register_length>(STATE<register_length> g)
-        : mGp1{g}
-        , mGp2{g}
+        : mGenerator{g}
+        , mRandomState{rnd_n::get_random_state<prime_modulo, register_length>(std::move(rnd_n::GeometricDistribution<int>{0.3}))}
+    {}
+
+    /**
+     * @brief Инициализировать генератор общего секрета.
+     */
+    void Init()
     {
-        g_rnd.seed();
-        mSt1 = rnd_n::get_random_state<prime_modulo, register_length>(g_rnd);
-        mSt2 = rnd_n::get_random_state<prime_modulo, register_length>(g_rnd);
+       M = PM + rnd_n::get_random_long_positive(0) % (T_MAX - 2 * PM + 1);
+       mGenerator.set_unit_state();
     }
 
     /**
-     * @brief Сгенерировать общий секрет стороной 1.
+     * @brief Обновить состояние.
+     * @param state Входящее состояние.
+     * @details Делается путём умножения текущего состояния генератора на входящее состояние.
      */
-    STATE<register_length> GenerateSecretBySide1()
+    void SetState(STATE<register_length> state)
     {
-        const u32 T_max = std::pow(prime_modulo, register_length) - 1; // Максимальный период генератора.
-        constexpr long pm = prime_modulo * register_length;
-        const long M = pm + rnd_n::get_random_long_positive(0) % (T_max - 2*pm + 1);
-        const long N = pm + rnd_n::get_random_long_positive(0) % (T_max - 2*pm + 1);
-        
-        STATE<register_length> tmp_state = mSt2; // Временная переменная для хранения состояния.
-        mGp2.set_unit_state(); // x^0.
-        mGp2.next(); // x^1.
-        mGp2.power_by(N); // Пара next() и power_by(q) соответствуют next() в цикле q раз. Так вычисляется x^q.
-        mGp2.mult_by(tmp_state); // x^q * v2(x)
-
-        mGp1.set_state(mGp2.get_state());
-        
-        mGp1.mult_by(mSt1); // *= v1(x)
-        tmp_state = mGp1.get_state();
-        mGp1.set_unit_state();
-        mGp1.next();
-        mGp1.power_by(M);
-        mGp1.mult_by(tmp_state);
-
-        mGp2.set_state(mGp1.get_state());
-    
-        mGp2.mult_by(mSt2);
-        tmp_state = mGp2.get_state();
-        mGp2.set_unit_state();
-        mGp2.next();
-        mGp2.power_by(T_max - N);
-        mGp2.mult_by(tmp_state);
-        
-        mGp1.set_state(mGp2.get_state());
-
-        mGp1.mult_by(mSt1);
-        tmp_state = mGp1.get_state();
-        mGp1.set_unit_state();
-        mGp1.next();
-        mGp1.power_by(T_max - M);
-        mGp1.mult_by(tmp_state);
-    
-        return mGp1.get_state();
+        mGenerator.set_state(state);
     }
 
     /**
-     * @brief Сгенерировать общий секрет стороной 2.
+     * @brief Получить текущее состояние генератора.
      */
-    STATE<register_length> GenerateSecretBySide2()
+    STATE<register_length> GetState() const
     {
-        const u32 T_max = std::pow(prime_modulo, register_length) - 1; // Максимальный период генератора.
-        constexpr long pm = prime_modulo * register_length;
-        const long P = pm + rnd_n::get_random_long_positive(0) % (T_max - 2*pm + 1);
-        const long Q = pm + rnd_n::get_random_long_positive(0) % (T_max - 2*pm + 1);
+        return mGenerator.get_state();
+    }
 
-        STATE<register_length> tmp_state = mSt1;
-        mGp1.set_unit_state();
-        mGp1.next();
-        mGp1.power_by(P);
-        mGp1.mult_by(tmp_state);
+    /**
+     * @brief Сделать шаг вперёд.
+     */
+    void Forward()
+    {
+        STATE<register_length> mTempState;
+        mTempState = mGenerator.get_state();
+        mGenerator.set_unit_state();
+        mGenerator.next();
+        mGenerator.power_by(M);
+        mGenerator.mult_by(mTempState);
+        mGenerator.mult_by(mRandomState);
+    }
 
-        mGp2.set_state(mGp1.get_state());
-        
-        mGp2.mult_by(mSt2);
-        tmp_state = mGp2.get_state();
-        mGp2.set_unit_state();
-        mGp2.next();
-        mGp2.power_by(Q);
-        mGp2.mult_by(tmp_state);
-
-        mGp1.set_state(mGp2.get_state());
-    
-        mGp1.mult_by(mSt1);
-        tmp_state = mGp1.get_state();
-        mGp1.set_unit_state();
-        mGp1.next();
-        mGp1.power_by(T_max - P);
-        mGp1.mult_by(tmp_state);
-        
-        mGp2.set_state(mGp1.get_state());
-
-        mGp2.mult_by(mSt2);
-        tmp_state = mGp2.get_state();
-        mGp2.set_unit_state();
-        mGp2.next();
-        mGp2.power_by(T_max - Q);
-        mGp2.mult_by(tmp_state);
-    
-        return mGp2.get_state();
+    /**
+     * @brief Сделать шаг назад.
+     */
+    void Backward()
+    {
+        STATE<register_length> mTempState;
+        mTempState = mGenerator.get_state();
+        mGenerator.set_unit_state();
+        mGenerator.next();
+        mGenerator.power_by(T_MAX - M);
+        mGenerator.mult_by(mTempState);
+        mGenerator.mult_by(mRandomState);
     }
 };
     

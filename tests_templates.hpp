@@ -253,7 +253,6 @@ inline auto calculate_sawtooth_period(LFSR<p, m>& g, int q, int& i0) {
 template <int p, int m>
 inline auto research_periods(LFSR<p, m>& g, u64 max_T, int iters) {
 	rnd_n::GeometricDistribution<int> r(0.3);
-	r.seed();
 	std::set<u64> Ts;
 	const u64 T0 = std::pow(p, m) - 1;
 	int iter = 0;
@@ -285,7 +284,6 @@ inline auto find_T1_polynomial(u64& T) { // Period T1 = p^(m-1) - 1.
 	STATE<m> K = {1};
 	LFSR<p, m> g(K);
 	rnd_n::GeometricDistribution<int> r(0.3);
-	r.seed();
 	T = 1;
 	const u64 T_ref = std::pow(p, m-1) - 1;
 	while (true) {
@@ -305,7 +303,6 @@ inline auto find_T0_polynomial(u64& T) { // maximal period Tmax = T0 = p^m - 1.
 	STATE<m> K = {1};
 	LFSR<p, m> g(K);
 	rnd_n::GeometricDistribution<int> r(0.3);
-	r.seed();
 	T = 0;
 	for (;;) {
 		K = get_random_coeffs<p, m>(r);
@@ -330,7 +327,6 @@ inline void test_next_back_inner_1() {
 	LFSR<p, 4> g(K);
 	using SAMPLE = lfsr8::MType<4>::SAMPLE;
 	rnd_n::GeometricDistribution<int> r(0.3);
-	r.seed();
 	const int iters = 256;
 	auto sub_test = [&g, &K, &r](int saturation){
 		int iter = 0;
@@ -374,7 +370,6 @@ inline void test_next_back_inner_2() {
 	LFSR<p, 8> g(K);
 	using SAMPLE = lfsr8::MType<8>::SAMPLE;
 	rnd_n::GeometricDistribution<int> r(0.3);
-	r.seed();
 	const int iters = 256;
 	auto sub_test = [&g, &K, &r](int saturation){
 		int iter = 0;
@@ -418,7 +413,6 @@ inline void test_next_back_inner_pair() {
 	LFSR_paired<p> g(K);
 	using SAMPLE = lfsr8::MType<8>::SAMPLE;
 	rnd_n::GeometricDistribution<int> r(0.3);
-	r.seed();
 	const int iters = 256;
 	auto sub_test = [&g, &K, &r](int saturation){
 		int iter = 0;

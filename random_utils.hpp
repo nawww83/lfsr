@@ -14,20 +14,22 @@ template <typename T>
 class GeometricDistribution {
 private:
     std::mt19937 gen;
-    std::geometric_distribution<T> dist;
-public:
-    GeometricDistribution(double p): gen(G_SEED), dist(p) {}
-	GeometricDistribution(GeometricDistribution&& other) noexcept: dist(std::move(other.dist)), gen(std::move(other.gen)) {}
-    T operator()() { return dist(gen); }
-	void seed() {
+	std::geometric_distribution<T> dist;
+
+	void seed()
+	{
 		auto t = std::chrono::high_resolution_clock::now().time_since_epoch().count();
     	std::seed_seq seq {t & 255, (t >> 8) & 255, (t >> 16) & 255, (t >> 24) & 255};
     	gen.seed( seq );
 	}
+public:
+    constexpr GeometricDistribution(double p): gen(G_SEED), dist(p) {seed();}
+	GeometricDistribution(GeometricDistribution&& other) noexcept: dist(std::move(other.dist)), gen(std::move(other.gen)) {}
+    T operator()() { return dist(gen); }
 };
 
 template<int p, int m, class Generator>
-inline auto get_random_state(Generator& g) {
+inline auto get_random_state(Generator&& g) {
 	STATE<m> st {};
 	while (1) {
 		int sum = 0;
@@ -43,7 +45,7 @@ inline auto get_random_state(Generator& g) {
 }
 
 template<int p, int m, class Generator>
-inline auto get_random_coeffs(Generator& g) {
+inline auto get_random_coeffs(Generator&& g) {
 	STATE<m> st {};
 	while (1) {
 		for (int i=0; i<m; ++i) {
@@ -57,7 +59,7 @@ inline auto get_random_coeffs(Generator& g) {
 }
 
 template<int p, class Generator>
-inline auto get_random_paired_coeffs(Generator& g) {
+inline auto get_random_paired_coeffs(Generator&& g) {
 	STATE<8> st {};
 	while (1) {
 		for (int i=0; i<8; ++i) {
@@ -71,7 +73,7 @@ inline auto get_random_paired_coeffs(Generator& g) {
 }
 
 template<class Generator>
-inline auto get_random_u32x4(Generator& g) {
+inline auto get_random_u32x4(Generator&& g) {
 	lfsr8::u32x4 st {};
 	for (int i = 0; i < 4; ++i) {
 		st[i] = g() & 255;
@@ -85,24 +87,26 @@ inline auto get_random_u32x4(Generator& g) {
 	return st;
 }
 
-inline auto get_random_u16x8(int64_t offset) {
-    const int64_t since_epoch_ms =
-        std::chrono::duration_cast<std::chrono::milliseconds>
-        (std::chrono::system_clock::now().time_since_epoch()).count();
-    std::seed_seq g_rnd_sequence{since_epoch_ms & 255, (since_epoch_ms >> 8) & 255,
-                                 (since_epoch_ms >> 16) & 255, (since_epoch_ms >> 24) & 255, offset};
-    lfsr8::u16x8 st;
-    g_rnd_sequence.generate(st.begin(), st.end());
-    return st;
-}
-
-inline auto get_random_u32x4(int64_t offset) {
+template <int64_t offset>
+inline auto get_random_u32x4() {
     const int64_t since_epoch_ms =
         std::chrono::duration_cast<std::chrono::milliseconds>
         (std::chrono::system_clock::now().time_since_epoch()).count();
     std::seed_seq g_rnd_sequence{since_epoch_ms & 255, (since_epoch_ms >> 8) & 255,
                                  (since_epoch_ms >> 16) & 255, (since_epoch_ms >> 24) & 255, offset};
     lfsr8::u32x4 st;
+    g_rnd_sequence.generate(st.begin(), st.end());
+    return st;
+}
+
+template <int64_t offset>
+inline auto get_random_u16x8() {
+    const int64_t since_epoch_ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>
+        (std::chrono::system_clock::now().time_since_epoch()).count();
+    std::seed_seq g_rnd_sequence{since_epoch_ms & 255, (since_epoch_ms >> 8) & 255,
+                                 (since_epoch_ms >> 16) & 255, (since_epoch_ms >> 24) & 255, offset};
+    lfsr8::u16x8 st;
     g_rnd_sequence.generate(st.begin(), st.end());
     return st;
 }
