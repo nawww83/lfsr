@@ -80,7 +80,6 @@ public:
         STATE<register_length> mTempState;
         mTempState = mGenerator.get_state();
         mGenerator.set_unit_state();
-        mGenerator.next();
         mGenerator.power_by(M);
         mGenerator.mult_by(mTempState);
         mGenerator.mult_by(mRandomState);
@@ -94,7 +93,6 @@ public:
         STATE<register_length> mTempState;
         mTempState = mGenerator.get_state();
         mGenerator.set_unit_state();
-        mGenerator.next();
         mGenerator.power_by(T_MAX - M);
         mGenerator.mult_by(mTempState);
         mGenerator.mult_by(mRandomState);
