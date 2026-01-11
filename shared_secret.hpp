@@ -8,7 +8,7 @@ namespace shared_secret_n
 {
 
 /**
- * @brief Генератор общего секрета.
+ * @brief Вспомогательный класс для двухфазного трехрауднового алгоритма генерации общего секрета.
  */
 template <int prime_modulo, int register_length>
 class SharedSecret
@@ -22,9 +22,14 @@ private:
     static const u32 T_MAX = std::pow(prime_modulo, register_length) - 1;
 
     /**
-     * @brief Случайная степень x. Задаёт x^M mod g(x) - некоторое случайное состояние.
+     * @brief Случайное ненулевое состояние-маска для одной фазы алгоритма генерации общего секрета.
      */
-    long M;
+    STATE<register_length> mMaskState;
+
+    /**
+     * @brief Обратное состояние-маска.
+     */
+    STATE<register_length> mInverseMaskState;
 
     /**
      * @brief LFSR генератор g(x). Должен иметь максимальный период.
@@ -42,22 +47,27 @@ public:
      */
     constexpr explicit SharedSecret<prime_modulo, register_length>(STATE<register_length> g)
         : mGenerator{g}
-        , mRandomState{rnd_n::get_random_state<prime_modulo, register_length>(std::move(rnd_n::GeometricDistribution<int>{0.3}))}
+        , mRandomState{rnd_n::get_random_state<prime_modulo, register_length>( std::move(rnd_n::GeometricDistribution<int>{0.3}) )}
     {}
 
     /**
-     * @brief Инициализировать генератор общего секрета.
+     * @brief Инициализировать генератор общего секрета перед началом новой фазы.
      */
     void Init()
     {
-       M = PM + rnd_n::get_random_long_positive(0) % (T_MAX - 2 * PM + 1);
-       mGenerator.set_unit_state();
+        auto g = rnd_n::GeometricDistribution<int>{0.3};
+        for (;;) 
+        {
+            mMaskState = rnd_n::get_random_state<prime_modulo, register_length>( g );
+            if (mMaskState != mRandomState) break;
+        }
+        mInverseMaskState = _LFSR::inverse_of(mMaskState, mGenerator.get_generator_coeffs());
+        mGenerator.set_unit_state();
     }
 
     /**
-     * @brief Обновить состояние.
+     * @brief Установить состояние.
      * @param state Входящее состояние.
-     * @details Делается путём умножения текущего состояния генератора на входящее состояние.
      */
     void SetState(STATE<register_length> state)
     {
@@ -77,11 +87,7 @@ public:
      */
     void Forward()
     {
-        STATE<register_length> mTempState;
-        mTempState = mGenerator.get_state();
-        mGenerator.set_unit_state();
-        mGenerator.power_by(M);
-        mGenerator.mult_by(mTempState);
+        mGenerator.mult_by(mMaskState);
         mGenerator.mult_by(mRandomState);
     }
 
@@ -90,11 +96,7 @@ public:
      */
     void Backward()
     {
-        STATE<register_length> mTempState;
-        mTempState = mGenerator.get_state();
-        mGenerator.set_unit_state();
-        mGenerator.power_by(T_MAX - M);
-        mGenerator.mult_by(mTempState);
+        mGenerator.mult_by(mInverseMaskState);
         mGenerator.mult_by(mRandomState);
     }
 };

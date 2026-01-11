@@ -15,6 +15,7 @@
 #include <cassert>
 #include <array>
 #include <type_traits>
+#include <cmath>
 
 #if defined(__x86_64__) || defined(_M_X64)
     #define USE_SSE
@@ -53,17 +54,29 @@ class LFSR {
     using STATE = typename MType<m>::STATE;
     using SAMPLE = typename MType<m>::SAMPLE;
 public:
+    /**
+     * @brief Конструктор с параметром.
+     * @param K Коэффициенты порождающего полинома g(x).
+     */
     constexpr LFSR(STATE K): m_K(K) {
         static_assert(m <= 8);
         static_assert(m > 0);
-        if constexpr (m > 4) {
+        if constexpr (m > 4)
+        {
             static_assert(p < 256);
-        } else {
+        } 
+        else
+        {
             static_assert(p < 256*256);
         }
         static_assert(p > 1);
         m_calculate_inverse_of_K();
     };
+
+    /**
+     * @brief Максимальный период генератора.
+     */
+    static const unsigned long T_MAX = std::pow(p, m) - 1;
 
     void set_state(STATE st) {
         m_state = st;
@@ -287,6 +300,32 @@ public:
     }
 
     /**
+     * @brief Возвести состояние в степень.
+     * @param state Состояние x^t.
+     * @param K Коэффициенты порождающего полинома g(x).
+     * @param q Показатель степени.
+     * @return Состояние x^(qt).
+     */
+    static STATE power_by(STATE state, STATE K, unsigned long q)
+    {
+        LFSR<p, m> lfsr{K};
+        lfsr.set_state(state);
+        lfsr.power_by(q);
+        return lfsr.get_state();
+    }
+
+    /**
+     * @brief Вычислить обратное состояние.
+     * @param state Состояние x^t.
+     * @param K Коэффициенты порождающего полинома g(x).
+     * @return Состояние, 1/x^t.
+     */
+    static STATE inverse_of(STATE state, STATE K)
+    {
+        return power_by(state, K, T_MAX - 1);
+    }
+
+    /**
      * @brief Насытить генератор.
      * @param q Количество тактов.
      */
@@ -313,22 +352,38 @@ public:
 #endif
     }
 
-    STATE get_state() const {
+    STATE get_generator_coeffs() const
+    {
+        return m_K;
+    }
+
+    STATE get_state() const 
+    {
         return m_state;
     }
 
-    SAMPLE get_cell(int idx) const {
+    SAMPLE get_cell(int idx) const 
+    {
         return m_state[idx];
     }
 private:
+    /**
+     * @brief Состояние генератора.
+     */
     alignas(16) STATE m_state {};
     
+    /**
+     * @brief Коэффициенты порождающего полинома g(x).
+     */
     alignas(16) STATE m_K {};
     
+    /**
+     * @brief Коэффициенты регистра для выполнения шага назад.
+     */
     alignas(16) STATE m_inv_K {};
     
      /**
-     * @brief Вычисляется обратный (по умножению) коэффициент.
+     * @brief Вычисляется обратный (по умножению) коэффициент K[0].
      */
     void m_calculate_inverse_of_K() {
         const auto x = m_K[0];

@@ -28,10 +28,13 @@ public:
     T operator()() { return dist(gen); }
 };
 
+/**
+ * @brief Получить случайное ненулевое состояние.
+ */
 template<int p, int m, class Generator>
 inline auto get_random_state(Generator&& g) {
 	STATE<m> st {};
-	while (1) {
+	for (;;) {
 		int sum = 0;
 		for (int i=0; i<m; ++i) {
 			st[i] = g() % p;
@@ -44,10 +47,13 @@ inline auto get_random_state(Generator&& g) {
 	return st;
 }
 
+/**
+ * @brief Получить случайные коэффициенты для порождающего полинома, так, что K[0] != 0.
+ */
 template<int p, int m, class Generator>
 inline auto get_random_coeffs(Generator&& g) {
 	STATE<m> st {};
-	while (1) {
+	for (;;) {
 		for (int i=0; i<m; ++i) {
 			st[i] = g() % p;
 		}
@@ -61,7 +67,7 @@ inline auto get_random_coeffs(Generator&& g) {
 template<int p, class Generator>
 inline auto get_random_paired_coeffs(Generator&& g) {
 	STATE<8> st {};
-	while (1) {
+	for (;;) {
 		for (int i=0; i<8; ++i) {
 			st[i] = g() % p;
 		}

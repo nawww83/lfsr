@@ -227,6 +227,22 @@ void test_power_of_lfsr()
         g.power_by(0);
         assert(g.is_state({1, 0, 0, 0}));        
     }
+    {
+        STATE<4> K = {2, 3, 1, 1};
+        LFSR<13, 4> g(K);
+        g.set_state({1, 2, 3, 4});
+        g.power_by(1);
+        assert(g.is_state({1, 2, 3, 4}));
+    }
+    {
+        STATE<4> K = {2, 3, 1, 1};
+        const STATE<4> state = {1, 2, 3, 4};
+        const STATE<4> inverse_state = LFSR<13, 4>::inverse_of(state, K);
+        LFSR<13, 4> g(K);
+        g.set_state(inverse_state);
+        g.mult_by(state);
+        assert(g.is_state({1, 0, 0, 0}));     
+    }
 }
 
 void find_lfsr_coefficients_T0_period() {
@@ -616,7 +632,7 @@ void test_shared_secret_generation() // Эксперимент по генера
     constexpr int register_length = 4;
     using namespace shared_secret_n;
 
-    const auto g = STATE<register_length>{3, 4, 2, 1};
+    const auto g = STATE<register_length>{3, 4, 2, 1}; // Порождающий полином g(x) = g[0] + g[1]*x + ... + g[m-1]*x^{m-1} + x^m.
     SharedSecret<prime_modulo, register_length> sh_secret_generator1(g);
     SharedSecret<prime_modulo, register_length> sh_secret_generator2(g);
 
