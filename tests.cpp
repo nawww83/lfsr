@@ -26,7 +26,8 @@ namespace tests
 
 static timer_n::Timer timer;
 
-void test_next_back() {
+void test_next_back() 
+{
     std::cout << "Wait for Next-Back test...\n";
     test_next_back_inner_pair<19>();
     test_next_back_inner_1<19>();
@@ -34,43 +35,42 @@ void test_next_back() {
     std::cout << " All Ok! Completed.\n";
 }
 
-void test_state_increment() {
+void test_state_increment() 
+{
     std::cout << "Wait for state increment test...\n";
     STATE<4> x {};
     const STATE<4> zero_state {};
     u64 T = 0;
     const u64 T0 = std::pow(19, 4);
-    while (1) {
+    for (;;) {
         increment_state<19, 4>(x);
         T++;
-        if (x == zero_state) {
-            break;
-        }
+        if (x == zero_state) break;
     }
     // show_with_thousands_separator(T0);
     assert(T == T0);
     std::cout << " All Ok! Completed.\n";
 }
 
-void test_special() {
+void test_special() 
+{
     const STATE<4> K = {4, 2, 2, 6};
     const int T_sawtooth = 7; // a prime
     LFSR<19, 4> g(K);
     STATE<4> initial_state {8, 7, 15, 13}; // special non-zero state
     g.set_state(initial_state);
     int i0 = 0;
-    while (1) {
-        auto T = calculate_sawtooth_period(g, T_sawtooth, i0);
-        (void)T;
-        const auto st = g.get_state();
-        assert(initial_state == st);
-        if (i0 == 0) {
-            break;
-        }
+    for (;;) 
+    {
+        [[maybe_unused]] auto T = calculate_sawtooth_period(g, T_sawtooth, i0);
+        const auto state = g.get_state();
+        assert(initial_state == state);
+        if (i0 == 0) break;
     }
 }
 
-void test_total_period() {
+void test_total_period() 
+{
     const int p = 11;
     const int m = 4;
     std::cout << "Wait for total period test...\n";	
@@ -84,24 +84,22 @@ void test_total_period() {
     increment_state<p, m>(initial_state);
     u64 sum_T = 0;
     timer.reset();
-    while (1) {
+    for (;;) 
+    {
         g.set_state(initial_state);
         int i0 = init_i;
         u64 TT = 0;
         int c = 0;
-        while (1) {
-            auto T = calculate_sawtooth_period(g, T_sawtooth, i0);
+        for (;;) 
+        {
+            const auto T = calculate_sawtooth_period(g, T_sawtooth, i0);
             TT += T;
             c++;
-            if (i0 == init_i) {
-                break;
-            }
+            if (i0 == init_i) break;
         }
         sum_T += TT;
         increment_state<p, m>(initial_state);
-        if (initial_state != zero_state) {
-            continue;
-        }
+        if (initial_state != zero_state) continue;
         break;
     }
     auto dt = timer.elapsed_ns();
@@ -111,7 +109,8 @@ void test_total_period() {
     std::cout << " All Ok! Completed. Elapsed: " << dt*1e-9 << " s.\n";
 }
 
-void test_square_of_lfsr() {
+void test_square_of_lfsr() 
+{
     std::cout << "Square of LFSR test\n";	
     // static constexpr STATE K4 = {2, 3, 1, 1, 2, 0, 1, 7};    // p=13
     STATE<4> K = {2, 3, 1, 1};
@@ -165,7 +164,8 @@ void test_square_of_lfsr() {
     }
 }
 
-void test_mult_by_of_lfsr() {
+void test_mult_by_of_lfsr() 
+{
     std::cout << "Mult by of LFSR test\n";	
     // static constexpr STATE K4 = {2, 3, 1, 1, 2, 0, 1, 7};    // p=13
     STATE<4> K = {2, 3, 1, 1};
@@ -245,9 +245,10 @@ void test_power_of_lfsr()
     }
 }
 
-void find_lfsr_coefficients_T0_period() {
-    constexpr int p = 2;
-    constexpr int m = 5;
+void find_lfsr_coefficients_T0_period() 
+{
+    constexpr int p = 13;
+    constexpr int m = 4;
     std::cout << "LFSR with modulo p: " << p << ", length m: " << m << std::endl;
     {
         std::cout << "Wait for maximal period T0 = p^m - 1 polynomial look up...\n";
@@ -256,7 +257,8 @@ void find_lfsr_coefficients_T0_period() {
         STATE<m> K = find_T0_polynomial<p, m>(T);
         auto dt = 1.e-9*timer.elapsed_ns();
         std::cout << " Found coefficients K: (";
-        for (int i=0; i<m-1; ++i) {
+        for (int i = 0; i < m - 1; ++i) 
+        {
             std::cout << K[i] << ", ";
         }
         std::cout << K[m-1] << ")" << ", dt: " << dt << " sec.\n";
@@ -265,7 +267,8 @@ void find_lfsr_coefficients_T0_period() {
     }
 }
 
-void find_lfsr_coefficients_T1_period() {
+void find_lfsr_coefficients_T1_period() 
+{
     constexpr int p = 13;
     constexpr int m = 4;
     u64 T;
@@ -274,7 +277,8 @@ void find_lfsr_coefficients_T1_period() {
     STATE<m> K = find_T1_polynomial<p, m>(T);
     auto dt = 1.e-9*timer.elapsed_ns();
     std::cout << " Found coefficients K: (";
-    for (int i=0; i<m-1; ++i) {
+    for (int i = 0; i < m - 1; ++i) 
+    {
         std::cout << K[i] << ", ";
     }
     std::cout << K[m-1] << ")" << ", dt: " << dt << " sec.\n";
@@ -282,7 +286,8 @@ void find_lfsr_coefficients_T1_period() {
     show_with_thousands_separator(T);
 }
 
-void test_lfsr_hash_bench() {
+void test_lfsr_hash_bench() 
+{
     std::cout << "Wait for LFSR hashes benchmark...\n";
     const size_t N = 65536*16*16;
     auto v = std::vector<uint8_t>(N);
@@ -310,23 +315,27 @@ void test_lfsr_hash_bench() {
     std::cout << " All Ok! Completed.\n";
 }
 
-void test_lfsr_hash_coverage_1() {
+void test_lfsr_hash_coverage_1() 
+{
     io_u::io_utils io;
     std::cout << "Wait for LFSR 32-bit hashes coverage test 1.1...\n";	
     std::set<lfsr8::u32> hashes;
-    for (int i=0; i<256; i++) {
+    for (int i = 0; i < 256; i++) 
+    {
         const uint8_t x = i;
         hashes.insert(lfsr_hash::hash32(&x, 1));
     }
     std::cout << hashes.size() << std::endl;
     assert(hashes.size() == 256);
-    for (int i=0; i<256*256; i++) {
+    for (int i = 0; i < 256*256; i++) 
+    {
         const lfsr8::u16 x = i;
         hashes.insert(lfsr_hash::hash32((uint8_t*)&x, 2));
     }
     std::cout << hashes.size() << std::endl;
     assert(hashes.size() == (256u + 65536u));
-    for (size_t i=0; i<256*256*2; i++) {
+    for (size_t i = 0; i < 256*256*2; i++) 
+    {
         const lfsr8::u32 x = i;
         uint8_t b[4];
         io.copy_to_mem_32(x, b, 4); // LE guaranteed
@@ -335,7 +344,8 @@ void test_lfsr_hash_coverage_1() {
     }
     std::cout << hashes.size() << std::endl;
     assert(hashes.size() == (256u + 65536u + 65536u*2));
-    for (size_t i=0; i<256*256; i++) {
+    for (size_t i = 0; i < 256*256; i++) 
+    {
         const lfsr8::u32 x = i;
         uint8_t b[4];
         io.copy_to_mem_32(x, b, 4); // LE guaranteed
@@ -347,23 +357,27 @@ void test_lfsr_hash_coverage_1() {
     std::cout << " All Ok! Completed.\n";
 }
 
-void test_lfsr_hash_coverage_2() {
+void test_lfsr_hash_coverage_2() 
+{
     io_u::io_utils io;
     std::cout << "Wait for LFSR 64-bit hashes coverage test 1.2...\n";	
     std::set<lfsr8::u64> hashes;
-    for (int i=0; i<256; i++) {
+    for (int i = 0; i < 256; i++) 
+    {
         const uint8_t x = i;
         hashes.insert( lfsr_hash::hash64((uint8_t*)&x, 1) );
     }
     std::cout << hashes.size() << std::endl;
     assert(hashes.size() == 256);
-    for (size_t i=0; i<256*256; i++) {
+    for (size_t i = 0; i < 256*256; i++) 
+    {
         const lfsr8::u16 x = i;
         hashes.insert( lfsr_hash::hash64((uint8_t*)&x, 2) );
     }
     std::cout << hashes.size() << std::endl;
     assert(hashes.size() == (256u + 65536u));
-    for (size_t i=0; i<256ull*256ull*256ull; i++) {
+    for (size_t i = 0; i < 256ull*256ull*256ull; i++) 
+    {
         const lfsr8::u32 x = i;
         uint8_t b[4];
         io.copy_to_mem_32(x, b, 4); // LE guaranteed
@@ -375,22 +389,26 @@ void test_lfsr_hash_coverage_2() {
     std::cout << " All Ok! Completed.\n";
 }
 
-void test_lfsr_hash_coverage_3() {
+void test_lfsr_hash_coverage_3() 
+{
     std::cout << "Wait for LFSR 128-bit hashes coverage test 1.3...\n";	
     std::set<std::pair<lfsr8::u64, lfsr8::u64>> hashes;
-    for (int i=0; i<256; i++) {
+    for (int i = 0; i < 256; i++) 
+    {
         const uint8_t x = i;
         hashes.insert( lfsr_hash::hash128((uint8_t*)&x, 1) );
     }
     std::cout << hashes.size() << std::endl;
     assert(hashes.size() == 256);
-    for (size_t i=0; i<256*256; i++) {
+    for (size_t i = 0; i < 256*256; i++) 
+    {
         const lfsr8::u16 x = i;
         hashes.insert( lfsr_hash::hash128((uint8_t*)&x, 2) );
     }
     std::cout << hashes.size() << std::endl;
     assert(hashes.size() == (256u + 65536u));
-    for (size_t i=0; i<256ull*256ull; i++) {
+    for (size_t i = 0; i < 256ull*256ull; i++) 
+    {
         const auto x = std::array<lfsr8::u64, 32> {i};
         for (int i=3; i<=256; ++i) {
             hashes.insert( lfsr_hash::hash128((uint8_t*)&x, i) );
@@ -401,16 +419,19 @@ void test_lfsr_hash_coverage_3() {
     std::cout << " All Ok! Completed.\n";
 }
 	
-void test_lfsr_hash_coverage_4() {
+void test_lfsr_hash_coverage_4() 
+{
     std::cout << "Wait for LFSR hashes coverage test 2...\n";
     const size_t N = 8192;
     std::vector<uint8_t> v(N);
     std::set<lfsr8::u32> hashes;
     size_t s = 0;
-    for (int val=0; val<256; val++) {
+    for (int val = 0; val < 256; val++) 
+    {
         v.assign(N, (uint8_t)val);
         assert(v.size() == N);
-        for (size_t i=1; i<=N; i++) {
+        for (size_t i = 1; i <= N; i++) 
+        {
             hashes.insert( lfsr_hash::hash32(v.data(), i) );
         }
     }
@@ -424,13 +445,15 @@ void test_lfsr_hash_coverage_4() {
     std::cout << " All Ok! Completed.\n";
 }
 
-void test_random_generator_next_back() {
+void test_random_generator_next_back() 
+{
     std::cout << "Wait for next-back PRNG v3 test...\n";	
 
     lfsr_rng_3::Generators g;
     rnd_n::GeometricDistribution<int> r(0.3);
 
-    auto state_conversion = [](lfsr8::u32x4 st) {
+    auto state_conversion = [](lfsr8::u32x4 st) 
+    {
         lfsr8::u16x8 st1;
         st1[0] = st[0];
         st1[1] = st[0] >> 16;
@@ -453,25 +476,30 @@ void test_random_generator_next_back() {
 
     const auto init_state = g.peek_u64();
     lfsr8::u64 h = 0;
-    for (int i=0; i<n; ++i) {
+    for (int i=0; i<n; ++i) 
+    {
         h ^= g.next_u64();
     }
-    for (int i=0; i<n; ++i) {
+    for (int i=0; i<n; ++i) 
+    {
         h ^= g.back_u64();
     }
     assert(init_state == g.peek_u64());
     std::cout << " All Ok! Completed.\n";
 }
 
-void test_bias8bit() {
+void test_bias8bit() 
+{
     lfsr_rng_2::gens gen;
     gen.seed(rnd_n::get_random_u32x4<1>());
     double g_mean = 0;
     int64_t g_c = 0;
-    for (;;) {
+    for (;;) 
+    {
         double mean = 0;
         constexpr int N = 256;
-        for (int i = 0; i < N; ++i) {
+        for (int i = 0; i < N; ++i) 
+        {
             mean += GetQuasiGaussSample8<float>(gen);
         }
         mean /= N;

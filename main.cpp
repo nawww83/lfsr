@@ -20,13 +20,13 @@ int main() {
 	test_shared_secret_generation();
 	
 	// test_lfsr_hash_coverage_1();
-	// test_lfsr_hash_coverage_2();
+	// test_lfsr_hash_coverage_2(); // You should have >= 16 GB memory to run this.
 	// test_lfsr_hash_coverage_3();
 	// test_lfsr_hash_coverage_4();
 
 	// test_bias8bit();
 	// test_bias16bit();
-	// test_next_back();
+	test_next_back();
 	// test_state_increment();
 	// test_special();
 	// test_total_period();
@@ -34,32 +34,10 @@ int main() {
 	// test_random_generators();
 
 	// test_random_generator_next_back();
-	// find_lfsr_coefficients_T0_period();
-	
-	// test_some_poly<19, 4>(STATE<4>{9, 5, 2, 0});
-	// test_some_poly<19, 4>(STATE<4>{4, 2, 2, 6});
-	// test_some_poly<17, 4>(STATE<4>{3, 4, 2, 1});
-	// test_some_poly<17, 4>(STATE<4>{6, 1, 2, 1});
-	// test_some_poly<17, 4>(STATE<4>{3, 2, 3, 4});
-	// test_some_poly<17, 4>(STATE<4>{6, 2, 0, 7});
-	// test_some_poly<13, 4>(STATE<4>{2, 3, 1, 1});
-	// test_some_poly<13, 4>(STATE<4>{2, 0, 1, 7});
+	find_lfsr_coefficients_T0_period();
 
-	// {
-	// 	u64 T;
-	// 	LFSR<2, 8> g ({1, 0, 0, 0, 1, 1, 0, 1});
-	// 	assert(!is_maximal_period(g, T));
-	// 	assert(T == 51);
-	// }
-	// {
-	// 	u64 T;
-	// 	LFSR<2, 8> g ({1, 0, 1, 1, 0, 1, 0, 0});
-	// 	assert(is_maximal_period(g, T));
-	// 	assert(T == 255);
-	// }
-
-	// test_square_of_lfsr();
-	// test_mult_by_of_lfsr();
+	test_square_of_lfsr();
+	test_mult_by_of_lfsr();
 
 	test_power_of_lfsr();
     

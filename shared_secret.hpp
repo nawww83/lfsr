@@ -2,7 +2,6 @@
 
 #include "types.hpp"
 #include "random_utils.hpp"
-#include <cmath>
 
 namespace shared_secret_n
 {
@@ -14,13 +13,7 @@ template <int prime_modulo, int register_length>
 class SharedSecret
 {
     using _LFSR = LFSR<prime_modulo, register_length>;
-    static constexpr long PM = prime_modulo * register_length;
 private:
-    /**
-     * @brief Максимальный период генератора.
-     */
-    static const u32 T_MAX = std::pow(prime_modulo, register_length) - 1;
-
     /**
      * @brief Случайное ненулевое состояние-маска для одной фазы алгоритма генерации общего секрета.
      */
