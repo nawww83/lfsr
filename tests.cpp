@@ -19,7 +19,7 @@
 #include "random_gen_3.hpp"
 #include "timer.hpp"
 #include "tests_templates.hpp"
-#include "shared_secret.hpp"
+#include "sawtooth.hpp"
 
 namespace tests
 {
@@ -656,51 +656,33 @@ void test_random_generators() {
 
 void test_shared_secret_generation() // Эксперимент по генерации общего секрета.
 {
-    constexpr int prime_modulo = 17;
-    constexpr int register_length = 4;
-    using namespace shared_secret_n;
+    constexpr int p = 17;
+    constexpr int m = 4;
+    LFSR<p, m> generator_lfsr{STATE<m>{3, 4, 2, 1}}; // Генератор LFSR с периодом T = p^m - 1.
+    const u32 initial_sawtooth = 0; // Начальное значение "пилы".
+    std::array<u32, 1> sawtooth{initial_sawtooth};
+    std::array<int, 1> p_saw{11};
+    // Период "пилы". Выбран так, что этот период не делит период T генератора LFSR.
+    // В итоге, когда LFSR генератор находится в одном и том же опорном состоянии,
+    // пила принимает все допустимые коды, поэтому общий период системы равен T_total = T * p_saw.
 
-    const auto g = STATE<register_length>{3, 4, 2, 1}; // Порождающий полином g(x) = g[0] + g[1]*x + ... + g[m-1]*x^{m-1} + x^m.
-    SharedSecret<prime_modulo, register_length> sh_secret_generator1(g);
-    SharedSecret<prime_modulo, register_length> sh_secret_generator2(g);
+    const auto reference_state = STATE<m>{1, 2, 3, 4}; // Эталонное начальное значение (опорное значение, ненулевое).
+    generator_lfsr.set_state(reference_state);
 
-    [[maybe_unused]] auto show_state = [](const std::string& title, STATE<register_length> st)
+    for (size_t i = 0;;)
     {
-        std::cout << title << ":\n";
-        for (int i = 0; i < register_length; ++i)
+        generator_lfsr.next(sawtooth.at(0)); // Модуляция генератора LFSR пилообоазным кодом.
+        saw_n::sawtooth_forward(sawtooth, p_saw);
+        i++;
+        if (generator_lfsr.is_state(reference_state))
         {
-            std::cout << st[i] << ", ";
+            std::cout << "Reference state when index i at: " << i << ", sawtooth code: " << sawtooth.at(0) << '\n';
         }
-        std::cout << std::endl;
-    };
-
-    // Stage 1
-    sh_secret_generator1.Init();
-    sh_secret_generator2.Init();
-    sh_secret_generator1.Forward();
-    sh_secret_generator2.SetState(sh_secret_generator1.GetState());
-    sh_secret_generator2.Forward();
-    sh_secret_generator1.SetState(sh_secret_generator2.GetState());
-    sh_secret_generator1.Backward();
-    sh_secret_generator2.SetState(sh_secret_generator1.GetState());
-    sh_secret_generator2.Backward();
-    const auto sh_secret_stage_1 = sh_secret_generator2.GetState();
-    show_state("Stage 1 state", sh_secret_stage_1);
-    
-    // Stage 2
-    sh_secret_generator1.Init();
-    sh_secret_generator2.Init();
-    sh_secret_generator2.Forward();
-    sh_secret_generator1.SetState(sh_secret_generator2.GetState());
-    sh_secret_generator1.Forward();
-    sh_secret_generator2.SetState(sh_secret_generator1.GetState());
-    sh_secret_generator2.Backward();
-    sh_secret_generator1.SetState(sh_secret_generator2.GetState());
-    sh_secret_generator1.Backward();
-    const auto sh_secret_stage_2 = sh_secret_generator1.GetState(); 
-    show_state("Stage 2 state", sh_secret_stage_2);
-
-    assert(sh_secret_stage_1 == sh_secret_stage_2);
+        if (generator_lfsr.is_state(reference_state) && sawtooth.at(0) == initial_sawtooth) // Общий период достигнут.
+        {
+            break;
+        }
+    }
 }
 
 }

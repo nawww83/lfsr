@@ -26,7 +26,7 @@ int main() {
 
 	// test_bias8bit();
 	// test_bias16bit();
-	test_next_back();
+	// test_next_back();
 	// test_state_increment();
 	// test_special();
 	// test_total_period();
@@ -34,12 +34,12 @@ int main() {
 	// test_random_generators();
 
 	// test_random_generator_next_back();
-	find_lfsr_coefficients_T0_period();
+	// find_lfsr_coefficients_T0_period();
 
-	test_square_of_lfsr();
-	test_mult_by_of_lfsr();
+	// test_square_of_lfsr();
+	// test_mult_by_of_lfsr();
 
-	test_power_of_lfsr();
+	// test_power_of_lfsr();
     
 	return 0;
 }
