@@ -362,10 +362,32 @@ inline auto find_T0_polynomial(u64& T)
 	STATE<m> K = {1};
 	LFSR<p, m> g(K);
 	rnd_n::GeometricDistribution<int> r(0.3);
+	auto is_primitive_element = [](u32 element, int modulo) -> bool
+	{
+		u32 x = 1;
+		size_t T = 0;
+		for (size_t i = 0; ;)
+		{
+			x *= element;
+			x %= static_cast<u32>(modulo);
+			i++;
+			if (x == 1)
+			{
+				T = i;
+				break;
+			}
+		}
+		return T == (static_cast<u32>(modulo) - 1); // Элемент примитивен в поле GF(p).
+	};
 	T = 0;
 	for (;;) 
 	{
-		K = get_random_coeffs<p, m>(r);
+		K = get_random_coeffs<p, m>(r); // Получить случайные коэффициенты полинома.
+		// Полином может быть примитивным, только если (-1)^m * K[0] - примитивный элемент поля GF(p).
+		const bool m_is_event = (m % 2) == 0;
+		const auto element = m_is_event ? K.at(0) : p - K.at(0); // != 0
+		if (!is_primitive_element(element, p))
+			continue;
 		g.set_K(K);
 		const auto is_divisible = is_maximal_period<p, m>(g, T);
         if (is_divisible) break;
