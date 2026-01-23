@@ -247,7 +247,7 @@ void test_power_of_lfsr()
 
 void find_lfsr_coefficients_T0_period() 
 {
-    constexpr int p = 13;
+    constexpr int p = 17;
     constexpr int m = 4;
     std::cout << "LFSR with modulo p: " << p << ", length m: " << m << std::endl;
     {
@@ -652,37 +652,6 @@ void test_random_generators() {
 		ave_perf += (perf - ave_perf) / (1.*c);
 		max_perf = std::max(perf, max_perf);
 	}
-}
-
-void test_shared_secret_generation() // Эксперимент по генерации общего секрета.
-{
-    constexpr int p = 17;
-    constexpr int m = 4;
-    LFSR<p, m> generator_lfsr{STATE<m>{3, 4, 2, 1}}; // Генератор LFSR с периодом T = p^m - 1.
-    const u32 initial_sawtooth = 0; // Начальное значение "пилы".
-    std::array<u32, 1> sawtooth{initial_sawtooth};
-    std::array<int, 1> p_saw{11};
-    // Период "пилы". Выбран так, что этот период не делит период T генератора LFSR.
-    // В итоге, когда LFSR генератор находится в одном и том же опорном состоянии,
-    // пила принимает все допустимые коды, поэтому общий период системы равен T_total = T * p_saw.
-
-    const auto reference_state = STATE<m>{1, 2, 3, 4}; // Эталонное начальное значение (опорное значение, ненулевое).
-    generator_lfsr.set_state(reference_state);
-
-    for (size_t i = 0;;)
-    {
-        generator_lfsr.next(sawtooth.at(0)); // Модуляция генератора LFSR пилообоазным кодом.
-        saw_n::sawtooth_forward(sawtooth, p_saw);
-        i++;
-        if (generator_lfsr.is_state(reference_state))
-        {
-            std::cout << "Reference state when index i at: " << i << ", sawtooth code: " << sawtooth.at(0) << '\n';
-        }
-        if (generator_lfsr.is_state(reference_state) && sawtooth.at(0) == initial_sawtooth) // Общий период достигнут.
-        {
-            break;
-        }
-    }
 }
 
 }

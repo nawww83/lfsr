@@ -37,6 +37,4 @@ void test_mult_by_of_lfsr();
 
 void test_power_of_lfsr();
 
-void test_shared_secret_generation();
-
 }

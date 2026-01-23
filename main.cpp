@@ -16,8 +16,6 @@ int main() {
     assert( io.is_little_endian() ^ io.is_big_endian() );
 
 	using namespace tests;
-
-	// test_shared_secret_generation();
 	
 	// test_lfsr_hash_coverage_1();
 	// test_lfsr_hash_coverage_2(); // You should have >= 16 GB memory to run this.
@@ -33,8 +31,8 @@ int main() {
 	
 	// test_random_generators();
 
-	// test_random_generator_next_back();
-	find_lfsr_coefficients_T0_period();
+	test_random_generator_next_back();
+	// find_lfsr_coefficients_T0_period();
 
 	// test_square_of_lfsr();
 	// test_mult_by_of_lfsr();

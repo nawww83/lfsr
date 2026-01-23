@@ -383,9 +383,10 @@ inline auto find_T0_polynomial(u64& T)
 	for (;;) 
 	{
 		K = get_random_coeffs<p, m>(r); // Получить случайные коэффициенты полинома.
-		// Полином может быть примитивным, только если (-1)^m * K[0] - примитивный элемент поля GF(p).
-		const bool m_is_event = (m % 2) == 0;
-		const auto element = m_is_event ? K.at(0) : p - K.at(0); // != 0
+		// Полином может быть примитивным, только если (-1)^m * g[0] - примитивный элемент поля GF(p).
+		// Здесь g[0] = -K[0].
+		const bool m_is_even = (m % 2) == 0;
+		const auto element = m_is_even ? p - K.at(0) : K.at(0);
 		if (!is_primitive_element(element, p))
 			continue;
 		g.set_K(K);
