@@ -654,4 +654,85 @@ void test_random_generators() {
 	}
 }
 
+void test_debug()
+{
+    rnd_n::GeometricDistribution<int> r(0.3);
+    constexpr int p = 17;
+    constexpr int m = 4;
+    LFSR<p, m> generator_lfsr{STATE<m>{3, 4, 2, 1}}; // Генератор LFSR с периодом T = p^m - 1.
+    u32 initial_sawtooth; // Начальное значение "пилы".
+    std::array<u32, 1> sawtooth;
+    std::array<int, 1> p_saw{11};
+    const long long T = (std::pow(p, m) - 1) * p_saw.at(0); // Период всей системы.
+    std::cout << "Total period: " << T << '\n';
+    constexpr long long open_key = 345;
+    const auto hash = STATE<m>{2, 4, 2, 3}; // Hash of the message.
+    std::vector<double> hist_of_quotients;
+    hist_of_quotients.resize(T);
+    std::fill_n(hist_of_quotients.begin(), hist_of_quotients.size(), 0);
+    constexpr size_t ITERS = 500;
+    for (size_t iter = 0; iter < ITERS; iter++)
+    {
+        std::cout << "iter: " << iter << " from " << ITERS << '\n' << std::flush;
+        bool digest_found = false;
+        for (; !digest_found ;) // Digest search.
+        {
+            const auto digest = rnd_n::get_random_state<p, m>(r);
+            if (hash == digest) continue;
+            generator_lfsr.set_state(hash);
+            initial_sawtooth = rnd_n::get_random_u32x4(r).at(0) % p_saw.at(0);
+            sawtooth[0] = initial_sawtooth;
+            long long i_hash = 0;
+            long long i_digest = 0;
+            bool changed = false;
+            for (long long i = 0;;)
+            {
+                generator_lfsr.next(sawtooth.at(0)); // Модуляция генератора LFSR пилообоазным кодом.
+                saw_n::sawtooth_forward(sawtooth, p_saw);
+                i++;
+                if (generator_lfsr.is_state(hash))
+                {
+                    i_hash = i;
+                    changed = true;
+                }
+                if (generator_lfsr.is_state(digest))
+                {
+                    i_digest = i;
+                    changed = true;
+                }
+                const auto delta = std::abs(i_hash - i_digest);
+                const auto delta_mod = delta % open_key;
+                if (changed && (delta_mod == 0))
+                {
+                    const size_t quotient = delta / open_key;
+                    hist_of_quotients[quotient]++;
+                    // std::cout << "Hash i: " << i_hash << ", digest i: " << i_digest << ", delta: " << 
+                    //     delta << ", sawtooth start : stop: " << initial_sawtooth << " : " << sawtooth.at(0) <<
+                    //     ", qoutient: " << quotient << '\n';
+                    digest_found = true;
+                    // break;
+                }
+                changed = false;
+                if (i >= T) break;
+            } // LFSR loop.
+        } // Digest search.
+    } // Statistics loop.
+    size_t most_probably_quotient = 0;
+    double max_f = 0;
+    for (size_t i = 0; const auto f : hist_of_quotients)
+    {
+        if (f != 0)
+        {
+            if (f > max_f)
+            {
+                max_f = f;
+                most_probably_quotient = i;
+            }
+            std::cout << "i: " << i << ", f: " << f << '\n';
+        }
+        i++;
+    }
+    std::cout << "Most probably quotient: " << most_probably_quotient << '\n';
+}
+
 }

@@ -23,6 +23,8 @@ void find_lfsr_coefficients_T0_period();
 
 void find_lfsr_coefficients_T1_period();
 
+void test_lfsr_hash_bench();
+
 void test_lfsr_hash_coverage_1();
 
 void test_lfsr_hash_coverage_2();
@@ -36,5 +38,7 @@ void test_square_of_lfsr();
 void test_mult_by_of_lfsr();
 
 void test_power_of_lfsr();
+
+void test_debug();
 
 }
