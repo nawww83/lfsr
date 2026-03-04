@@ -29,7 +29,7 @@ static timer_n::Timer timer;
 void test_next_back() 
 {
     std::cout << "Wait for Next-Back test...\n";
-    test_next_back_inner_pair<19>();
+    test_next_back_inner_pair<251>();
     test_next_back_inner_1<65521>();
     test_next_back_inner_2<19>();
     std::cout << " All Ok! Completed.\n";
