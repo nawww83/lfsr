@@ -30,7 +30,7 @@ void test_next_back()
 {
     std::cout << "Wait for Next-Back test...\n";
     test_next_back_inner_pair<19>();
-    test_next_back_inner_1<19>();
+    test_next_back_inner_1<65521>();
     test_next_back_inner_2<19>();
     std::cout << " All Ok! Completed.\n";
 }
@@ -41,7 +41,7 @@ void test_state_increment()
     STATE<4> x {};
     const STATE<4> zero_state {};
     u64 T = 0;
-    const u64 T0 = std::pow(19, 4);
+    const auto T0 = lfsr8::safe_ipow<u64>(19, 4);
     for (;;) {
         increment_state<19, 4>(x);
         T++;
@@ -75,7 +75,7 @@ void test_total_period()
     const int m = 4;
     std::cout << "Wait for total period test...\n";	
     const STATE<m> zero_state {};
-    const u64 T0 = std::pow(p, m) - 1;
+    const auto T0 = lfsr8::safe_ipow<u64>(p, m) - 1;
     const STATE<m> K = {5, 1, 4, 0}; // p = 11
     const int init_i = 1;
     const int T_sawtooth = 7; // a prime: (p^m - 1)  mod T_sawtooth is not zero
@@ -215,7 +215,7 @@ void test_power_of_lfsr()
     {
         STATE<4> K = {2, 3, 1, 1};
         LFSR<13, 4> g(K);
-        long T = std::pow(13, 4) - 1;
+        const auto T = lfsr8::safe_ipow<u64>(13, 4) - 1;
         g.set_state({1, 2, 3, 4});
         g.power_by(T);
         assert(g.is_state({1, 0, 0, 0}));
@@ -247,7 +247,7 @@ void test_power_of_lfsr()
 
 void find_lfsr_coefficients_T0_period() 
 {
-    constexpr int p = 17;
+    constexpr int p = 251;
     constexpr int m = 4;
     std::cout << "LFSR with modulo p: " << p << ", length m: " << m << std::endl;
     {

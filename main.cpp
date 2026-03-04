@@ -40,7 +40,7 @@ int main() {
 
 	test_power_of_lfsr();
 
-	test_lfsr_hash_bench();
+	// test_lfsr_hash_bench();
 
 	// test_debug();
 

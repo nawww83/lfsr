@@ -179,7 +179,7 @@ inline void increment_state(STATE<m>& x)
 template <int p, int m>
 inline std::pair<bool, u64> calculate_period(LFSR<p, m>& g) 
 {
-	const u64 T0 = std::pow(p, m) - 1;
+	const auto T0 = lfsr8::safe_ipow<u64>(p, m) - 1;
 	const auto multipliers = factor(T0); // Получить множители максимального периода.
     std::set<u64> divisors{1}; // Множество делителей: необходимо поддерживать отсортированным.
     //
@@ -226,7 +226,7 @@ inline std::pair<bool, u64> calculate_period(LFSR<p, m>& g)
 template <int p, int m>
 inline bool is_maximal_period(LFSR<p, m>& g, u64& T) 
 {
-	const u64 T0 = std::pow(p, m) - 1;
+	const auto T0 = lfsr8::safe_ipow<u64>(p, m) - 1;
 	const auto multipliers = factor(T0); // Получить множители максимального периода.
     std::set<u64> divisors{1}; // Множество делителей: необходимо поддерживать отсортированным.
     for (const auto [t, c] : multipliers) {
@@ -308,7 +308,7 @@ inline auto research_periods(LFSR<p, m>& g, u64 max_T, int iters)
 {
 	rnd_n::GeometricDistribution<int> r(0.3);
 	std::set<u64> Ts;
-	const u64 T0 = std::pow(p, m) - 1;
+	const auto T0 = lfsr8::safe_ipow<u64>(p, m) - 1;
 	int iter = 0;
 	for (;;) {
 		auto st = get_random_state<p, m>(r);
@@ -341,7 +341,7 @@ inline auto find_T1_polynomial(u64& T)
 	LFSR<p, m> g(K);
 	rnd_n::GeometricDistribution<int> r(0.3);
 	T = 1;
-	const u64 T_ref = std::pow(p, m-1) - 1;
+	const auto T_ref = lfsr8::safe_ipow<u64>(p, m - 1) - 1;
 	for (;;) 
 	{
 		K = get_random_coeffs<p, m>(r);
@@ -383,6 +383,13 @@ inline auto find_T0_polynomial(u64& T)
 	for (;;) 
 	{
 		K = get_random_coeffs<p, m>(r); // Получить случайные коэффициенты полинома.
+		// std::cout << " Try coefficients K: (";
+        // for (int i = 0; i < m - 1; ++i) 
+        // {
+        //     std::cout << K[i] << ", ";
+        // }
+        // std::cout << ")" << '\n';
+
 		// Полином может быть примитивным, только если (-1)^m * g[0] - примитивный элемент поля GF(p).
 		// Здесь g[0] = -K[0].
 		const bool m_is_even = (m % 2) == 0;
@@ -416,15 +423,17 @@ inline void test_next_back_inner_1() {
 			for (int i=0; i<saturation; ++i) {
 				g.next();
 			}
-			const int max_i = 32 + ((16383*iter)/iters);
+			const int max_i = 32 + ((16383 * iter) / iters);
 			const auto ref = g.get_state();
+
 			for (int i=0; i<max_i; ++i) {
 				g.next(i % p); // mod p: keep linearity
-				v.push_back( g.get_state()[check_pos] );
-			}
+				v.push_back( g.get_cell(check_pos) );
+			};
+
 			bool result = true;
 			for (int i=0; i<max_i; ++i) {
-				result &= (v.back() == g.get_state()[check_pos]);
+				result &= (v.back() == g.get_cell(check_pos));
 				g.back((max_i - 1 - i) % p); // mod p: keep linearity
 				v.pop_back();
 			}
@@ -463,11 +472,11 @@ inline void test_next_back_inner_2() {
 			const auto ref = g.get_state();
 			for (int i=0; i<max_i; ++i) {
 				g.next(i % p); // mod p: keep linearity
-				v.push_back( g.get_state()[check_pos] );
+				v.push_back( g.get_cell(check_pos) );
 			}
 			bool result = true;
 			for (int i=0; i<max_i; ++i) {
-				result &= (v.back() == g.get_state()[check_pos]);
+				result &= (v.back() == g.get_cell(check_pos));
 				g.back((max_i - 1 - i) % p); // mod p: keep linearity
 				v.pop_back();
 			}
