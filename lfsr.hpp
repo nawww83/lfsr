@@ -87,7 +87,7 @@ namespace lfsr8
             // Явно приводим к типу SAMPLE, который завязан на шаблонный p
             // Это заставит компилятор использовать оптимизированную последовательность для константы
             const uint32_t prod = (uint32_t)m_v * K[i + 1];
-            const uint32_t subtrahend = prod % (uint32_t)p; // p — параметр шаблона
+            const uint32_t subtrahend = prod % (uint16_t)p; // p — параметр шаблона
             // Финальное вычитание через условие (без деления!)
             int32_t res = (int32_t)state[i + 1] - (int32_t)subtrahend;
             res += res < 0 ? p : 0;

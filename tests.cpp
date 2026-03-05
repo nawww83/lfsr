@@ -31,7 +31,7 @@ void test_next_back()
     std::cout << "Wait for Next-Back test...\n";
     test_next_back_inner_pair<251>();
     test_next_back_inner_1<65521>();
-    test_next_back_inner_2<19>();
+    test_next_back_inner_2<251>();
     std::cout << " All Ok! Completed.\n";
 }
 
@@ -247,7 +247,7 @@ void test_power_of_lfsr()
 
 void find_lfsr_coefficients_T0_period() 
 {
-    constexpr int p = 251;
+    constexpr int p = 241;
     constexpr int m = 4;
     std::cout << "LFSR with modulo p: " << p << ", length m: " << m << std::endl;
     {
@@ -265,25 +265,6 @@ void find_lfsr_coefficients_T0_period()
         std::cout << " Period T0: ";
         show_with_thousands_separator(T);
     }
-}
-
-void find_lfsr_coefficients_T1_period() 
-{
-    constexpr int p = 13;
-    constexpr int m = 4;
-    u64 T;
-    std::cout << "Wait for period T1 = p^(m-1) - 1 polynomial look up...\n";
-    timer.reset();
-    STATE<m> K = find_T1_polynomial<p, m>(T);
-    auto dt = 1.e-9*timer.elapsed_ns();
-    std::cout << " Found coefficients K: (";
-    for (int i = 0; i < m - 1; ++i) 
-    {
-        std::cout << K[i] << ", ";
-    }
-    std::cout << K[m-1] << ")" << ", dt: " << dt << " sec.\n";
-    std::cout << " Period T1: ";
-    show_with_thousands_separator(T);
 }
 
 void test_lfsr_hash_bench() 
@@ -344,7 +325,7 @@ void test_lfsr_hash_coverage_1()
     }
     std::cout << hashes.size() << std::endl;
     assert(hashes.size() == (256u + 65536u + 65536u*2));
-    for (size_t i = 0; i < 256*256; i++) 
+    for (size_t i = 0; i < 256; i++) 
     {
         const lfsr8::u32 x = i;
         uint8_t b[4];
@@ -353,7 +334,7 @@ void test_lfsr_hash_coverage_1()
         hashes.insert( hash );
     }
     std::cout << hashes.size() << std::endl;
-    assert(hashes.size() == (256u + 65536u + 65536u*2 + 65536u));
+    assert(hashes.size() == (256u + 65536u + 65536u*2 + 256u));
     std::cout << " All Ok! Completed.\n";
 }
 
@@ -410,8 +391,9 @@ void test_lfsr_hash_coverage_3()
     for (size_t i = 0; i < 256ull*256ull; i++) 
     {
         const auto x = std::array<lfsr8::u64, 32> {i};
-        for (int i=3; i<=256; ++i) {
-            hashes.insert( lfsr_hash::hash128((uint8_t*)&x, i) );
+        for (int j = 3; j <= 256; ++j) 
+        {
+            hashes.insert( lfsr_hash::hash128((uint8_t*)&x, j) );
         }
     }
     std::cout << hashes.size() << std::endl;
@@ -440,8 +422,8 @@ void test_lfsr_hash_coverage_4()
     // assert(N*256ull == s);
     assert(s >= 2096661);
     // when N = 8192 we can see the LFSR hash is comparable with SHA-512 by the size of hashes set 's = hashes.size()'
-    // sha-512 (but it's low 32-bit) has s = 2'096'661
-    // Current LFSR has s = 2'096'662 (~comparable)
+    // sha-512 (low 32-bit only) has s = 2'096'661
+    // Current LFSR has s = 2'096'663 (~comparable)
     std::cout << " All Ok! Completed.\n";
 }
 

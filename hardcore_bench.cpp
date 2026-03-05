@@ -4,6 +4,7 @@ namespace hard_bench
 {
     void run_all()
     {
+        std::cout << "Run the hardcore benchmark\n...";
         // if (has_invariant_tsc())
         // {
         //     std::cout << "TSC стабилен (Invariant). Замеры будут точными!\n";

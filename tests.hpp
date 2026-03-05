@@ -21,8 +21,6 @@ void test_random_generator_next_back();
 
 void find_lfsr_coefficients_T0_period();
 
-void find_lfsr_coefficients_T1_period();
-
 void test_lfsr_hash_bench();
 
 void test_lfsr_hash_coverage_1();

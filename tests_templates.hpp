@@ -304,58 +304,6 @@ inline auto calculate_sawtooth_period(LFSR<p, m>& g, int q, int& i0)
 }
 
 template <int p, int m>
-inline auto research_periods(LFSR<p, m>& g, u64 max_T, int iters) 
-{
-	rnd_n::GeometricDistribution<int> r(0.3);
-	std::set<u64> Ts;
-	const auto T0 = lfsr8::safe_ipow<u64>(p, m) - 1;
-	int iter = 0;
-	for (;;) {
-		auto st = get_random_state<p, m>(r);
-		g.set_state(st);
-		const auto [is_divisor, T] = calculate_period<p, m>(g);
-		if (T < 1) {
-			std::cout << "Abnormal period detected! Skip it.\n";
-			continue;
-		}
-		if (T > max_T) {
-			break;
-		}
-		Ts.insert( T );
-		if (T == T0) {
-			break;
-		}
-		++iter;
-		if (iter >= iters) {
-			break;
-		}
-	}
-	return Ts;
-}
-
-template <int p, int m>
-inline auto find_T1_polynomial(u64& T) 
-{  
-	// T1 = p^(m-1) - 1.
-	STATE<m> K = {1};
-	LFSR<p, m> g(K);
-	rnd_n::GeometricDistribution<int> r(0.3);
-	T = 1;
-	const auto T_ref = lfsr8::safe_ipow<u64>(p, m - 1) - 1;
-	for (;;) 
-	{
-		K = get_random_coeffs<p, m>(r);
-		g.set_K(K);
-		auto Ts = research_periods(g, T_ref, 30);
-		if (Ts.contains(T_ref)) {
-			T = T_ref;
-			break;
-		}
-	}
-	return K;
-}
-
-template <int p, int m>
 inline auto find_T0_polynomial(u64& T) 
 { 
 	// Maximal period is T0 = p^m - 1.

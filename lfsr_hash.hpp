@@ -14,8 +14,8 @@ using u32 = lfsr8::u32;
 using u64 = lfsr8::u64;
 using u128 = std::pair<lfsr8::u64, lfsr8::u64>;
 
-static constexpr STATE K1 = {7, 1, 6, 0, 4, 1, 3, 2};    // p=251
-static constexpr STATE K2 = {13, 2, 5, 10, 7, 0, 10, 1}; // p=241
+static constexpr STATE K1 = {3, 2, 2, 0, 9, 1, 0, 4};  // p = 251
+static constexpr STATE K2 = {7, 0, 4, 3, 7, 3, 2, 0};  // p = 241
 
 struct salt {
     int q;
@@ -47,7 +47,7 @@ public:
         g_241x4.set_unit_state();
     }
     void add_salt(salt S) {
-        for (int i=0; i<S.q; ++i) {
+        for (int i = 0; i < S.q; ++i) {
             g_251x4.next(S.s0);
             g_241x4.next(S.s1);
         }
@@ -59,13 +59,13 @@ public:
         auto st1 = g_251x4.get_state();
         auto st2 = g_241x4.get_state();
         lfsr8::u32 hash;
-        hash  = ((st1[0] ^ st1[4])) ^ ((st2[0] ^ st2[4]));
+        hash  = (st1[0] ^ 1 ^ st1[4]) ^ (st2[0] ^ 3 ^ st2[4]);
         hash <<= 8;
-        hash |= ((st1[1] ^ st1[5])) ^ ((st2[1] ^ st2[5]));
+        hash |= (st1[1] ^ 3 ^ st1[5]) ^ (st2[1] ^ 1 ^ st2[5]);
         hash <<= 8;
-        hash |= ((st1[2] ^ st1[6])) ^ ((st2[2] ^ st2[6]));
+        hash |= (st1[2] ^ 5 ^ st1[6]) ^ (st2[2] ^ 5 ^ st2[6]);
         hash <<= 8;
-        hash |= ((st1[3] ^ st1[7])) ^ ((st2[3] ^ st2[7]));
+        hash |= (st1[3] ^ 3 ^ st1[7]) ^ (st2[3] ^ 3 ^ st2[7]);
         
         return hash;
     }
